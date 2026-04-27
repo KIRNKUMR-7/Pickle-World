@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "postbuild": "node setup-vercel-output.cjs",
+    "postbuild": "node generate-index.cjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
