@@ -1,0 +1,10 @@
+node_modules
+.wrangler
+.tanstack
+bun.lockb
+build-log.txt
+temp_index.tsx
+temp_index2.tsx
+temp_index_utf8.tsx
+temp_index2_utf8.tsx
+patch.cjs
