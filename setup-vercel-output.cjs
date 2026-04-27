@@ -23,29 +23,56 @@ function copyDir(src, dest) {
 }
 copyDir(distClient, path.join(out, 'static'));
 
-// 2. Bundle server worker into Edge Function
-const workerFiles = fs.readdirSync(path.join(distServer, 'assets'))
-  .filter(f => f.startsWith('worker-entry') && f.endsWith('.js'));
-const workerFile = workerFiles[0];
-const workerSrc = fs.readFileSync(
-  path.join(distServer, 'assets', workerFile), 'utf8'
-);
-const serverIndex = fs.readFileSync(path.join(distServer, 'index.js'), 'utf8');
+// 2. Find the worker-entry file
+const serverAssetsDir = path.join(distServer, 'assets');
+const workerFile = fs.readdirSync(serverAssetsDir)
+  .find(f => f.startsWith('worker-entry') && f.endsWith('.js'));
 
-// Write bundled edge function
+if (!workerFile) {
+  console.error('Could not find worker-entry in dist/server/assets/');
+  process.exit(1);
+}
+
+const workerSrc = fs.readFileSync(path.join(serverAssetsDir, workerFile), 'utf8');
+
+// 3. Write the Vercel Node.js function — wraps the Cloudflare Worker fetch handler
+const funcDir = path.join(out, 'functions', 'index.func');
+
+// The worker-entry exports: export default { fetch(request, env, ctx) {} }
+// We wrap it so Vercel Node.js runtime can call it via Web API Request/Response
+const funcCode = `
+${workerSrc}
+
+// Vercel Node.js handler (Web Request API format)
+export default async function handler(request) {
+  // The Cloudflare Worker default export has a .fetch() method
+  const worker = (typeof module_default !== 'undefined') ? module_default : globalThis.__worker_default__;
+  if (worker && typeof worker.fetch === 'function') {
+    return worker.fetch(request, {}, { waitUntil: () => {}, passThroughOnException: () => {} });
+  }
+  return new Response('SSR handler not found', { status: 500 });
+}
+`;
+
+fs.writeFileSync(path.join(funcDir, 'index.js'), funcCode, 'utf8');
+
+// package.json so Node.js treats this as ESM
 fs.writeFileSync(
-  path.join(out, 'functions', 'index.func', 'index.js'),
-  workerSrc + '\n' + serverIndex,
-  'utf8'
+  path.join(funcDir, 'package.json'),
+  JSON.stringify({ type: 'module' }, null, 2)
 );
 
-// 3. Edge function config
+// 4. Node.js runtime config (not edge — supports node:stream)
 fs.writeFileSync(
-  path.join(out, 'functions', 'index.func', '.vc-config.json'),
-  JSON.stringify({ runtime: 'edge', entrypoint: 'index.js' }, null, 2)
+  path.join(funcDir, '.vc-config.json'),
+  JSON.stringify({
+    runtime: 'nodejs22.x',
+    handler: 'index.js',
+    maxDuration: 10
+  }, null, 2)
 );
 
-// 4. Vercel output config — static assets first, SSR everything else
+// 5. Vercel routing config
 fs.writeFileSync(
   path.join(out, 'config.json'),
   JSON.stringify({
@@ -61,6 +88,6 @@ fs.writeFileSync(
   }, null, 2)
 );
 
-console.log('✅ Vercel output built successfully');
-console.log('   Static:', distClient);
-console.log('   Edge fn: worker-entry via', workerFile);
+console.log('✅ Vercel output ready');
+console.log('   Runtime: nodejs22.x (supports node:stream)');
+console.log('   Worker: ' + workerFile);
