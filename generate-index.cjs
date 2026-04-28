@@ -4,48 +4,53 @@ const path = require('path');
 const clientDir = path.join(__dirname, 'dist', 'client');
 const serverDir = path.join(__dirname, 'dist', 'server');
 const clientAssets = path.join(clientDir, 'assets');
-const serverAssets = path.join(serverDir, 'assets');
 
-// 1. Find and read the TanStack Start manifest (in server assets)
-const manifestFile = fs.readdirSync(serverAssets)
-  .find(f => f.startsWith('_tanstack-start-manifest') && f.endsWith('.js'));
+// 1. Copy manifest if server build exists (needed for client-side module loading)
+const serverAssetsDir = path.join(serverDir, 'assets');
+if (fs.existsSync(serverAssetsDir)) {
+  const manifestFile = fs.readdirSync(serverAssetsDir)
+    .find(f => f.startsWith('_tanstack-start-manifest') && f.endsWith('.js'));
 
-if (!manifestFile) {
-  console.error('❌ No _tanstack-start-manifest file found');
+  if (manifestFile) {
+    fs.copyFileSync(
+      path.join(serverAssetsDir, manifestFile),
+      path.join(clientAssets, manifestFile)
+    );
+    console.log('✅ Copied manifest:', manifestFile);
+  }
+}
+
+// 2. Find the main client JS bundle — largest .js file
+const allClientAssets = fs.readdirSync(clientAssets);
+const jsFiles = allClientAssets
+  .filter(f => f.endsWith('.js') && !f.endsWith('.map') && !f.startsWith('_tanstack'))
+  .map(f => ({
+    name: f,
+    size: fs.statSync(path.join(clientAssets, f)).size
+  }))
+  .sort((a, b) => b.size - a.size);
+
+if (jsFiles.length === 0) {
+  console.error('❌ No JS files found in dist/client/assets/');
   process.exit(1);
 }
 
-// Copy manifest to client assets so the client JS can fetch it
-fs.copyFileSync(
-  path.join(serverAssets, manifestFile),
-  path.join(clientAssets, manifestFile)
-);
-console.log('✅ Copied manifest:', manifestFile);
+const mainEntry = jsFiles[0].name;
+console.log('✅ Main client entry (largest JS):', mainEntry, `(${Math.round(jsFiles[0].size / 1024)}KB)`);
 
-// 2. Extract clientEntry from manifest content
-const manifestContent = fs.readFileSync(path.join(serverAssets, manifestFile), 'utf8');
-const clientEntryMatch = manifestContent.match(/clientEntry:\s*["']([^"']+)["']/);
-const clientEntry = clientEntryMatch ? clientEntryMatch[1] : null;
-
-if (!clientEntry) {
-  console.error('❌ Could not find clientEntry in manifest');
-  process.exit(1);
-}
-console.log('✅ Client entry:', clientEntry);
-
-// 3. Find CSS
-const cssFile = fs.readdirSync(clientAssets)
-  .find(f => f.startsWith('styles-') && f.endsWith('.css'));
-
-if (!cssFile) {
-  console.error('❌ No CSS file found');
-  process.exit(1);
+// 3. Find CSS (optional — Tailwind v4 may inline CSS into JS)
+const cssFile = allClientAssets.find(f => f.endsWith('.css') && !f.endsWith('.map'));
+const cssLink = cssFile ? `<link rel="stylesheet" href="/assets/${cssFile}" />` : '';
+if (cssFile) {
+  console.log('✅ CSS file:', cssFile);
+} else {
+  console.log('ℹ️  No separate CSS — inlined into JS bundle (Tailwind v4)');
 }
 
-// 4. Generate index.html with:
-//    - Correct clientEntry script
-//    - window.__TSR_DEHYDRATED__ injected (required by TanStack Start client)
-//    - window.__TSR_MANIFEST__ pointing to the manifest
+// 4. Generate index.html
+// TanStack Start's client build calls hydrateRoot(document, ...) so it hydrates
+// the entire HTML document. We must provide __TSR_DEHYDRATED__ to tell the router
+// it's running in CSR mode (no server dehydration), preventing "Invariant failed".
 const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -53,26 +58,22 @@ const html = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pickle World — Handmade Non-Veg Pickles</title>
     <meta name="description" content="Authentic handmade non-veg pickles &amp; podis from Tamil Nadu. Chicken, Fish, Prawn, Mutton — pure, preservative-free." />
-    <link rel="stylesheet" href="/assets/${cssFile}" />
+    <meta property="og:title" content="Pickle World — Handmade Non-Veg Pickles" />
+    <meta property="og:description" content="Authentic handmade non-veg pickles &amp; podis from Tamil Nadu. No preservatives. Pure taste." />
+    <meta property="og:type" content="website" />
+    ${cssLink}
     <script>
-      // Required by TanStack Start client for CSR mode (no SSR data)
-      window.__TSR_DEHYDRATED__ = {
-        router: {
-          state: {
-            dehydratedMatches: []
-          }
-        }
-      };
+      // Tell TanStack Start router to run in CSR mode (no SSR dehydration).
+      // Without this, hydrateRoot() fails with "Invariant failed" because it
+      // looks for server-rendered router state that doesn't exist in a static deploy.
+      window.__TSR_DEHYDRATED__ = { router: { state: { dehydratedMatches: [] } } };
     </script>
   </head>
   <body>
-    <script type="module" src="${clientEntry}"></script>
+    <script type="module" src="/assets/${mainEntry}"></script>
   </body>
 </html>
 `;
 
 fs.writeFileSync(path.join(clientDir, 'index.html'), html, 'utf8');
 console.log('✅ Generated dist/client/index.html');
-console.log('   CSS:', cssFile);
-console.log('   JS:', clientEntry);
-console.log('   __TSR_DEHYDRATED__ injected for CSR mode');
