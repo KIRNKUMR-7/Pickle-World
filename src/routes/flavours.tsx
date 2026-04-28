@@ -8,12 +8,6 @@ import { ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/flavours")({
   component: Flavours,
-  head: () => ({
-    meta: [
-      { title: "The Seven Flavours — Pickle World" },
-      { name: "description", content: "Chicken, mutton, fish, dry fish, prawn pickles & two podis. All hand-pounded, slow-cured." },
-    ],
-  }),
 });
 
 function Flavours() {

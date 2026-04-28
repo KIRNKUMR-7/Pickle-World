@@ -6,12 +6,6 @@ import { Leaf, Flame, Package, HeartHandshake } from "lucide-react";
 
 export const Route = createFileRoute("/why")({
   component: Why,
-  head: () => ({
-    meta: [
-      { title: "Why Pickle World — Tiny batches, huge flavour" },
-      { name: "description", content: "Four reasons our pickles taste like nothing else: cold-pressed oils, slow-cure, hand-pound, ethical sourcing." },
-    ],
-  }),
 });
 
 const pillars = [

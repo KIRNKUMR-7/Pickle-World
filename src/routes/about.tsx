@@ -6,12 +6,6 @@ import heroJars from "@/assets/hero-jars.jpg";
 
 export const Route = createFileRoute("/about")({
   component: About,
-  head: () => ({
-    meta: [
-      { title: "Our Story — Pickle World" },
-      { name: "description", content: "How a tiny South Indian kitchen turned into a cult of seven hand-pounded pickles." },
-    ],
-  }),
 });
 
 function About() {

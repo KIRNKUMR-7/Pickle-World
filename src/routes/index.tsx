@@ -14,14 +14,6 @@ import aboutImage from "@/assets/about-image.jpg";
 
 export const Route = createFileRoute("/")({
   component: Home,
-  head: () => ({
-    meta: [
-      { title: "Pickle World — Hand-pounded Indian pickles & podis" },
-      { name: "description", content: "Seven small-batch, fire-forward Indian pickles and podis. Slow-cured, never compromised. Order from Pickle World." },
-      { property: "og:title", content: "Pickle World — Stir the soul" },
-      { property: "og:description", content: "Seven hand-pounded flavours. Country chicken, Andhra fish, Konkan dry fish & more." },
-    ],
-  }),
 });
 
 function Home() {
