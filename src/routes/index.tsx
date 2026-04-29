@@ -172,7 +172,7 @@ function Home() {
           </motion.div>
 
           {/* Mobile Text Links & Action (Hidden on desktop) */}
-          <div className="md:hidden flex flex-col items-center w-full z-20 mt-8 mb-4">
+          <div className="md:hidden flex flex-col items-center w-full z-40 mt-36 mb-4">
             <Link
               to="/flavours"
               className="mb-6 flex w-full max-w-[280px] justify-center items-center gap-2 rounded-full bg-chili px-7 py-4 font-mono text-sm font-bold uppercase tracking-widest text-cream shadow-glow"
@@ -183,7 +183,7 @@ function Home() {
             <Link to="/about" className="font-mono text-xs uppercase tracking-widest text-muted-foreground underline-offset-4 hover:text-cream hover:underline">
               Our story →
             </Link>
-            <div className="w-full flex justify-start pl-8 mt-4">
+            <div className="w-full flex justify-start pl-2 mt-8">
               <div className="rotate-[-6deg] rounded-full bg-turmeric px-6 py-2.5 font-display text-xl font-black text-ink shadow-sticker">
                 ★ EST. 2021
               </div>
@@ -279,7 +279,7 @@ function Home() {
         <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Left Content */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
@@ -305,16 +305,16 @@ function Home() {
             </motion.div>
 
             {/* Right Image */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: "-100px" }}
               className="relative mt-8 md:mt-0"
             >
               <div className="absolute -inset-4 bg-chili/20 blur-3xl rounded-full" />
-              <img 
-                src={aboutImage} 
-                alt="Woman making authentic pickle" 
+              <img
+                src={aboutImage}
+                alt="Woman making authentic pickle"
                 className="relative z-10 max-h-[350px] md:max-h-[500px] w-auto mx-auto rounded-2xl drop-shadow-2xl border border-white/10"
               />
               <div className="absolute -bottom-6 -left-6 md:-left-12 z-20 rotate-[-6deg] rounded-full bg-turmeric px-6 py-3 font-display text-lg md:text-xl font-black text-ink shadow-sticker">
