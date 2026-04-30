@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
-import { HeatMeter } from "@/components/HeatMeter";
 import { flavours } from "@/data/flavours";
 import jarStraight from "@/assets/jar-straight.png";
 import jarTilted from "@/assets/jar-tilted.png";
@@ -152,22 +151,11 @@ function Home() {
               className="absolute right-0 top-6 z-20 w-[65%] drop-shadow-2xl rotate-12"
             />
 
-            {/* Mobile "No Preservatives" Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="md:hidden absolute -right-2 top-14 rotate-[12deg] rounded-full bg-cream px-3 py-1.5 font-mono text-[8px] font-bold uppercase tracking-widest text-ink shadow-sticker z-30"
-            >
-              No preservatives
-            </motion.div>
+            {/* Mobile "No Preservatives" Badge Removed */}
 
             {/* Desktop Badges (Hidden on mobile) */}
             <div className="hidden md:block absolute -bottom-6 -left-6 rotate-[-8deg] rounded-full bg-turmeric px-5 py-3 font-display text-xl font-black text-ink shadow-sticker z-30">
               ★ EST. 2021
-            </div>
-            <div className="hidden md:block absolute -right-4 top-6 rotate-[12deg] rounded-full bg-cream px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-ink shadow-sticker">
-              No preservatives
             </div>
           </motion.div>
 
@@ -258,7 +246,6 @@ function Home() {
                 <h3 className="mb-2 font-display text-base md:text-2xl font-black uppercase leading-tight group-hover:text-turmeric transition-colors line-clamp-2">{f.name}</h3>
                 <div className="flex items-center justify-between mt-3 md:mt-6">
                   <div className="flex flex-col gap-1 md:gap-2">
-                    <HeatMeter level={f.heat} />
                     <div className="flex gap-2 md:gap-4 font-mono text-xs md:text-sm">
                       <span className="text-muted-foreground">{f.weight}</span>
                       <span className="font-bold text-cream">₹{f.price}</span>

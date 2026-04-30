@@ -82,8 +82,7 @@ export function SiteFooter() {
         {/* Column 2: Navigation Links */}
         <div className="md:col-span-1 bg-ink flex flex-col border-b md:border-b-0 md:border-r border-border/40">
           {[
-            { to: "/", label: "Works" },
-            { to: "/flavours", label: "Flavours" },
+            { to: "/flavours", label: "Our Menu" },
             { to: "/about", label: "Story" },
             { to: "/why", label: "Why Us" },
           ].map((link) => (

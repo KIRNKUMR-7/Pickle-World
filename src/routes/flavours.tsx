@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
-import { HeatMeter } from "@/components/HeatMeter";
 import { flavours } from "@/data/flavours";
 import { ShoppingBag } from "lucide-react";
 
@@ -62,10 +61,6 @@ function Flavours() {
               </div>
               <div className="mt-8 flex items-end justify-between border-t border-border pt-6">
                 <div>
-                  <div className="mb-2 flex items-center gap-3">
-                    <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Heat</span>
-                    <HeatMeter level={f.heat} />
-                  </div>
                   <p className="font-display text-4xl font-black">
                     {f.weight}
                   </p>
