@@ -216,7 +216,7 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-          {flavours.slice(0, 6).map((f, i) => (
+          {flavours.slice(0, 7).map((f, i) => (
             <motion.div
               key={f.slug}
               initial={{ opacity: 0, y: 30 }}
@@ -246,9 +246,15 @@ function Home() {
                 <h3 className="mb-2 font-display text-base md:text-2xl font-black uppercase leading-tight group-hover:text-turmeric transition-colors line-clamp-2">{f.name}</h3>
                 <div className="flex items-center justify-between mt-3 md:mt-6">
                   <div className="flex flex-col gap-1 md:gap-2">
-                    <div className="flex gap-2 md:gap-4 font-mono text-xs md:text-sm">
+                    <div className="flex flex-wrap gap-2 md:gap-4 font-mono text-xs md:text-sm items-center">
                       <span className="text-muted-foreground">{f.weight}</span>
                       <span className="font-bold text-cream">₹{f.price}</span>
+                      {f.price300g && (
+                        <>
+                          <span className="text-muted-foreground ml-1 md:ml-2">300g</span>
+                          <span className="font-bold text-cream">₹{f.price300g}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="hidden md:block rounded-full bg-white/10 p-3 opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">

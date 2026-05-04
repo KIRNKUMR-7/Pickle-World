@@ -59,11 +59,16 @@ function Flavours() {
                   ))}
                 </div>
               </div>
-              <div className="mt-8 flex items-end justify-between border-t border-border pt-6">
-                <div>
-                  <p className="font-display text-4xl font-black">
-                    {f.weight}
+              <div className="mt-8 flex flex-row items-end justify-between border-t border-border pt-6">
+                <div className="flex flex-col gap-2">
+                  <p className="font-display text-2xl md:text-4xl font-black">
+                    <span className="text-lg md:text-xl text-muted-foreground font-mono font-normal mr-2 md:mr-3">{f.weight}</span>₹{f.price}
                   </p>
+                  {f.price300g && (
+                    <p className="font-display text-2xl md:text-4xl font-black">
+                      <span className="text-lg md:text-xl text-muted-foreground font-mono font-normal mr-2 md:mr-3">300g</span>₹{f.price300g}
+                    </p>
+                  )}
                 </div>
                 <button 
                   onClick={() => {

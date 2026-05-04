@@ -4,12 +4,15 @@ import fish from "@/assets/p-fish.jpg";
 import dryfish from "@/assets/Dry fish pickle.png";
 import prawn from "@/assets/prawn pickle.png";
 import cpodi from "@/assets/chicken idli powder.png";
+import prawnPodi from "@/assets/prawn-podi.png";
+
 export type Flavour = {
   slug: string;
   name: string;
   tagline: string;
   heat: 1 | 2 | 3 | 4 | 5;
   price: number;
+  price300g?: number;
   weight: string;
   image: string;
   notes: string[];
@@ -23,6 +26,7 @@ export const flavours: Flavour[] = [
     tagline: "The Crowd-Pleaser",
     heat: 3,
     price: 130,
+    price300g: 350,
     weight: "100g",
     image: chicken,
     notes: ["Country chicken", "Sesame oil", "Curry leaf"],
@@ -33,7 +37,8 @@ export const flavours: Flavour[] = [
     name: "Mutton Pickle",
     tagline: "The Heavyweight",
     heat: 4,
-    price: 130,
+    price: 250,
+    price300g: 700,
     weight: "100g",
     image: mutton,
     notes: ["Tender goat", "Black pepper", "Tamarind"],
@@ -45,6 +50,7 @@ export const flavours: Flavour[] = [
     tagline: "The Coastal Storm",
     heat: 5,
     price: 130,
+    price300g: 350,
     weight: "100g",
     image: fish,
     notes: ["Seer fish", "Guntur chili", "Mustard"],
@@ -56,6 +62,7 @@ export const flavours: Flavour[] = [
     tagline: "The Cult Classic",
     heat: 4,
     price: 130,
+    price300g: 350,
     weight: "100g",
     image: dryfish,
     notes: ["Sun-dried catch", "Garlic", "Tamarind"],
@@ -66,7 +73,8 @@ export const flavours: Flavour[] = [
     name: "Prawn Pickle",
     tagline: "The Ocean Whisper",
     heat: 3,
-    price: 130,
+    price: 230,
+    price300g: 600,
     weight: "100g",
     image: prawn,
     notes: ["Tiger prawns", "Mustard oil", "Fenugreek"],
@@ -82,5 +90,16 @@ export const flavours: Flavour[] = [
     image: cpodi,
     notes: ["Roasted chicken", "Lentils", "Dry chili"],
     story: "Sun-dried roasted chicken pounded with toasted lentils. Pour over hot ghee.",
+  },
+  {
+    slug: "prawn-podi",
+    name: "Prawn Idly Podi",
+    tagline: "Authentic & Flavorful",
+    heat: 3,
+    price: 120,
+    weight: "100g",
+    image: prawnPodi,
+    notes: ["Prawn", "Roasted Gram", "Garlic"],
+    story: "Savor the rich coastal taste with our Prawn Idly Podi - a spicy, prawn-spiced blend made from premium prawns and traditional South spices.",
   },
 ];
