@@ -71,9 +71,38 @@ function Flavours() {
                   )}
                 </div>
                 <button 
-                  onClick={() => {
-                    if (window.confirm(`Proceed to order ${f.name} via WhatsApp?`)) {
-                      window.open(`https://wa.me/919842298461?text=I%20wanna%20order%20${encodeURIComponent(f.name.toLowerCase())}`, '_blank');
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/create-order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ amount: f.price, receipt: `rcpt_${f.slug}_${Date.now()}` })
+                      });
+                      if (!res.ok) throw new Error("Order creation failed");
+                      const order = await res.json();
+                      
+                      const options = {
+                        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                        amount: order.amount,
+                        currency: order.currency,
+                        name: "Pickle World",
+                        description: `Order for ${f.name}`,
+                        order_id: order.id,
+                        handler: function (response: any) {
+                          alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}`);
+                        },
+                        prefill: {
+                          name: "Guest User",
+                          email: "guest@example.com",
+                          contact: "9999999999"
+                        },
+                        theme: { color: "#F37254" }
+                      };
+                      const rzp1 = new (window as any).Razorpay(options);
+                      rzp1.open();
+                    } catch (error) {
+                      console.error(error);
+                      alert("Could not initialize Razorpay. Are you running locally without Vercel dev?");
                     }
                   }}
                   className="inline-flex items-center gap-2 rounded-full bg-chili px-5 py-3 font-mono text-xs font-bold uppercase tracking-widest text-cream transition-transform hover:scale-105"
