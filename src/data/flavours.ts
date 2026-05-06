@@ -102,4 +102,15 @@ export const flavours: Flavour[] = [
     notes: ["Prawn", "Roasted Gram", "Garlic"],
     story: "Savor the rich coastal taste with our Prawn Idly Podi - a spicy, prawn-spiced blend made from premium prawns and traditional South spices.",
   },
+  {
+    slug: "sample",
+    name: "Sample Pickle",
+    tagline: "Try Before You Buy",
+    heat: 2,
+    price: 1,
+    weight: "10g",
+    image: chicken,
+    notes: ["Mixed spices", "Sesame oil", "Handmade"],
+    story: "Not sure which pickle to love? Start here. A tiny jar packed with big flavour — our classic blend to help you take the first bite.",
+  },
 ];
