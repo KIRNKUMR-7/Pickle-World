@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
@@ -16,10 +16,13 @@ function vercelApiMock() {
           req.on('data', (chunk: any) => { body += chunk.toString(); });
           req.on('end', async () => {
             try {
+              // Load env vars explicitly for the mock plugin
+              const env = loadEnv(server.config.mode, process.cwd(), '');
+              
               const { amount, currency = "INR", receipt } = JSON.parse(body);
               const razorpay = new Razorpay({
-                key_id: process.env.RAZORPAY_KEY_ID,
-                key_secret: process.env.RAZORPAY_KEY_SECRET,
+                key_id: env.RAZORPAY_KEY_ID,
+                key_secret: env.RAZORPAY_KEY_SECRET,
               });
               const options = { amount: amount * 100, currency, receipt };
               const order = await razorpay.orders.create(options);
