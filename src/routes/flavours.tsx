@@ -4,6 +4,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { flavours } from "@/data/flavours";
 import { ShoppingBag } from "lucide-react";
+import { useCartStore } from "@/store/cartStore";
 
 export const Route = createFileRoute("/flavours")({
   component: Flavours,
@@ -70,43 +71,19 @@ function Flavours() {
                     </p>
                   )}
                 </div>
-                <button 
-                  onClick={async () => {
-                    try {
-                      const res = await fetch("/api/create-order", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ amount: f.price, receipt: `rcpt_${f.slug}_${Date.now()}` })
-                      });
-                      if (!res.ok) throw new Error("Order creation failed");
-                      const order = await res.json();
-                      
-                      const options = {
-                        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-                        amount: order.amount,
-                        currency: order.currency,
-                        name: "Pickle World",
-                        description: `Order for ${f.name}`,
-                        order_id: order.id,
-                        handler: function (response: any) {
-                          alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}`);
-                        },
-                        prefill: {
-                          name: "Guest User",
-                          email: "guest@example.com",
-                          contact: "9999999999"
-                        },
-                        theme: { color: "#F37254" }
+                  <button
+                    onClick={() => {
+                      const item = {
+                        slug: f.slug,
+                        name: f.name,
+                        variant: selectedVariant[f.id] || "100g",
+                        price: (selectedVariant[f.id] || "100g") === "100g" ? f.price : f.price300g,
+                        image: f.image
                       };
-                      const rzp1 = new (window as any).Razorpay(options);
-                      rzp1.open();
-                    } catch (error) {
-                      console.error(error);
-                      alert("Could not initialize Razorpay. Are you running locally without Vercel dev?");
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full bg-chili px-5 py-3 font-mono text-xs font-bold uppercase tracking-widest text-cream transition-transform hover:scale-105"
-                >
+                      useCartStore.getState().addItem(item);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-stone-950 px-6 py-3 rounded-full font-bold transition-all shadow-glow"
+                  >
                   <ShoppingBag className="h-4 w-4" /> Add
                 </button>
               </div>

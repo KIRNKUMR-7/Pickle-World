@@ -1,11 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShoppingBag } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useCartStore } from "@/store/cartStore";
 
 export function SiteNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const { items, toggleCart } = useCartStore();
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl">
@@ -31,7 +34,21 @@ export function SiteNav() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3 md:gap-0">
+        <div className="flex items-center gap-3">
+          {/* Cart Button */}
+          <button
+            id="cart-toggle-btn"
+            onClick={() => toggleCart()}
+            className="relative p-2 rounded-full hover:bg-white/10 transition-colors text-cream"
+            aria-label="Open Cart"
+          >
+            <ShoppingBag className="h-6 w-6" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-amber-500 text-stone-950 text-[10px] font-black">
+                {totalItems}
+              </span>
+            )}
+          </button>
           <a
             href="#order"
             className="rounded-full bg-cream px-4 py-1.5 md:px-5 md:py-2 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105"

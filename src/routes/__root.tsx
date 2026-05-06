@@ -22,6 +22,10 @@ function NotFoundComponent() {
   );
 }
 
+import { Cart } from '../components/Cart';
+
+// ... other imports
+
 export const Route = createRootRoute({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -30,6 +34,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <>
+      <Cart />
       <Outlet />
       <a
         href="https://wa.me/919842298461?text=hi%20i%20wanna%20place%20an%20order"

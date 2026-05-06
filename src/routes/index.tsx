@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { flavours } from "@/data/flavours";
+import { useCartStore } from "@/store/cartStore";
 import jarStraight from "@/assets/jar-straight.png";
 import jarTilted from "@/assets/jar-tilted.png";
 import chatgptImg from "@/assets/chatgpt.png";
@@ -223,49 +224,7 @@ function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: i * 0.05 }}
-              onClick={async () => {
-                try {
-                  const res = await fetch("/api/create-order", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ amount: f.price, receipt: `rcpt_${f.slug}_${Date.now()}` })
-                  });
-                  
-                  let order;
-                  try {
-                    order = await res.json();
-                  } catch (e) {
-                    throw new Error("Received invalid response from server. Vercel API might be broken.");
-                  }
-
-                  if (!res.ok) {
-                    throw new Error(order.error || "Order creation failed. Check Vercel Environment Variables.");
-                  }
-                  
-                  const options = {
-                    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-                    amount: order.amount,
-                    currency: order.currency,
-                    name: "Pickle World",
-                    description: `Order for ${f.name}`,
-                    order_id: order.id,
-                    handler: function (response: any) {
-                      alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}`);
-                    },
-                    prefill: {
-                      name: "Guest User",
-                      email: "guest@example.com",
-                      contact: "9999999999"
-                    },
-                    theme: { color: "#F37254" }
-                  };
-                  const rzp1 = new (window as any).Razorpay(options);
-                  rzp1.open();
-                } catch (error) {
-                  alert(error.message || "Could not initialize Razorpay.");
-                }
-              }}
-              className="group relative overflow-hidden rounded-2xl glass-card border border-white/5 transition-all duration-500 hover:shadow-glow hover:-translate-y-1 cursor-pointer"
+              className="group relative overflow-hidden rounded-2xl glass-card border border-white/5 transition-all duration-500 hover:shadow-glow hover:-translate-y-1"
             >
               <div className="relative aspect-[4/3] sm:aspect-[4/3] overflow-hidden bg-black/20">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -281,21 +240,32 @@ function Home() {
               <div className="p-3 md:p-6 relative z-20">
                 <p className="mb-1 font-mono text-[8px] md:text-xs uppercase tracking-widest text-chili line-clamp-1">{f.tagline}</p>
                 <h3 className="mb-2 font-display text-base md:text-2xl font-black uppercase leading-tight group-hover:text-turmeric transition-colors line-clamp-2">{f.name}</h3>
-                <div className="flex items-center justify-between mt-3 md:mt-6">
-                  <div className="flex flex-col gap-1 md:gap-2">
-                    <div className="flex flex-wrap gap-2 md:gap-4 font-mono text-xs md:text-sm items-center">
-                      <span className="text-muted-foreground">{f.weight}</span>
-                      <span className="font-bold text-cream">₹{f.price}</span>
-                      {f.price300g && (
-                        <>
-                          <span className="text-muted-foreground ml-1 md:ml-2">300g</span>
-                          <span className="font-bold text-cream">₹{f.price300g}</span>
-                        </>
-                      )}
-                    </div>
+                <div className="flex flex-col gap-2 mt-3 md:mt-4">
+                  <div className="flex flex-wrap gap-2 font-mono text-xs md:text-sm items-center">
+                    <span className="text-muted-foreground">100g</span>
+                    <span className="font-bold text-cream">₹{f.price}</span>
+                    {f.price300g && (
+                      <>
+                        <span className="text-muted-foreground ml-1">300g</span>
+                        <span className="font-bold text-cream">₹{f.price300g}</span>
+                      </>
+                    )}
                   </div>
-                  <div className="hidden md:block rounded-full bg-white/10 p-3 opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
-                    <ArrowRight className="h-4 w-4 text-turmeric" />
+                  <div className="flex gap-2 mt-1">
+                    <button
+                      onClick={() => useCartStore.getState().addItem({ slug: f.slug, name: f.name, variant: '100g', price: f.price, image: f.image })}
+                      className="flex-1 text-[10px] md:text-xs font-bold py-1.5 md:py-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-400 border border-amber-500/20 transition-colors"
+                    >
+                      + 100g
+                    </button>
+                    {f.price300g && (
+                      <button
+                        onClick={() => useCartStore.getState().addItem({ slug: f.slug, name: f.name, variant: '300g', price: f.price300g!, image: f.image })}
+                        className="flex-1 text-[10px] md:text-xs font-bold py-1.5 md:py-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-400 border border-amber-500/20 transition-colors"
+                      >
+                        + 300g
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
