@@ -230,8 +230,17 @@ function Home() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ amount: f.price, receipt: `rcpt_${f.slug}_${Date.now()}` })
                   });
-                  if (!res.ok) throw new Error("Order creation failed");
-                  const order = await res.json();
+                  
+                  let order;
+                  try {
+                    order = await res.json();
+                  } catch (e) {
+                    throw new Error("Received invalid response from server. Vercel API might be broken.");
+                  }
+
+                  if (!res.ok) {
+                    throw new Error(order.error || "Order creation failed. Check Vercel Environment Variables.");
+                  }
                   
                   const options = {
                     key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -253,8 +262,7 @@ function Home() {
                   const rzp1 = new (window as any).Razorpay(options);
                   rzp1.open();
                 } catch (error) {
-                  console.error(error);
-                  alert("Could not initialize Razorpay. Are you running locally without Vercel dev?");
+                  alert(error.message || "Could not initialize Razorpay.");
                 }
               }}
               className="group relative overflow-hidden rounded-2xl glass-card border border-white/5 transition-all duration-500 hover:shadow-glow hover:-translate-y-1 cursor-pointer"
