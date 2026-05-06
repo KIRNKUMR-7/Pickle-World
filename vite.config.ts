@@ -66,5 +66,16 @@ export default defineConfig({
     // Vercel's outputDirectory in vercel.json points here.
     outDir: "dist",
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000, // kB — suppress warning for chunks under 1 MB
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-router": ["@tanstack/react-router"],
+          "vendor-supabase": ["@supabase/supabase-js"],
+          "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-slot"],
+        },
+      },
+    },
   },
 });
