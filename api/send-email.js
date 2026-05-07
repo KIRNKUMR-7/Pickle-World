@@ -163,7 +163,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         from: `Pickle World <${FROM_EMAIL}>`,
-        to: ["kiran2006bgkr@gmail.com", "bokudakira07@gmail.com"],
+        to: ["kiran2006bgkr@gmail.com", "bokudakira07@gmail.com", "PICKLEWORLDHOMEMADENONVEGPICKL@GMAIL.COM"],
         subject: `🚨 ADMIN: New Order from ${safeName} (₹${total})`,
         html: html.replace('Order Confirmed!', 'New Order Received!'),
       }),
