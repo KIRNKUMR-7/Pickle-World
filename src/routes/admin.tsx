@@ -55,21 +55,30 @@ function AdminPage() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState('');
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error && data) {
-      setOrders(data as Order[]);
-      setLastRefresh(new Date());
+    setFetchError('');
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        setFetchError(`Supabase error: ${error.message} (code: ${error.code})`);
+      } else {
+        setOrders((data as Order[]) || []);
+        setLastRefresh(new Date());
+      }
+    } catch (err: any) {
+      setFetchError(`Network error: ${err?.message || 'Unknown error'}. Check Supabase URL and anon key in Vercel env vars.`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -156,9 +165,8 @@ function AdminPage() {
                 value={pin}
                 onChange={(e) => { setPin(e.target.value); setPinError(false); }}
                 placeholder="Enter PIN"
-                className={`w-full bg-white/5 border rounded-xl px-4 py-3.5 text-white text-center text-2xl tracking-widest outline-none transition-colors ${
-                  pinError ? "border-red-500 focus:border-red-400" : "border-white/10 focus:border-amber-500"
-                }`}
+                className={`w-full bg-white/5 border rounded-xl px-4 py-3.5 text-white text-center text-2xl tracking-widest outline-none transition-colors ${pinError ? "border-red-500 focus:border-red-400" : "border-white/10 focus:border-amber-500"
+                  }`}
                 autoFocus
               />
               {pinError && <p className="text-red-400 text-xs mt-2 text-center">Incorrect PIN. Try again.</p>}
@@ -290,11 +298,24 @@ function AdminPage() {
             </div>
           )}
 
+          {/* Error */}
+          {!loading && fetchError && (
+            <div className="m-5 p-4 rounded-xl bg-red-500/10 border border-red-500/20 space-y-2">
+              <p className="text-red-400 font-semibold text-sm">⚠️ Could not load orders</p>
+              <p className="text-red-300/70 text-xs font-mono break-all">{fetchError}</p>
+              <div className="mt-3 pt-3 border-t border-red-500/10 text-xs text-red-300/50 space-y-1">
+                <p><strong>Fix:</strong> Go to Supabase → Settings → API → copy the <code>anon public</code> key</p>
+                <p>Then add it to <strong>Vercel → Settings → Env Vars</strong> as <code>VITE_SUPABASE_ANON_KEY</code> and redeploy.</p>
+              </div>
+            </div>
+          )}
+
           {/* Empty */}
-          {!loading && filtered.length === 0 && (
+          {!loading && !fetchError && filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-white/30 gap-3">
               <ShoppingBag className="w-10 h-10 opacity-20" />
-              <p>{search ? "No orders match your search." : "No orders yet. Go sell some pickles! 🥒"}</p>
+              <p>{search ? "No orders match your search." : "No orders yet. Place a test order to see it here! 🥒"}</p>
+              <p className="text-xs text-white/20 max-w-xs text-center">Orders appear here after a successful Razorpay payment. Make sure the SQL schema is created in Supabase.</p>
             </div>
           )}
 
@@ -415,8 +436,8 @@ function AdminPage() {
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 flex flex-col md:flex-row items-start md:items-center gap-4">
           <div className="p-3 bg-green-500/10 rounded-xl shrink-0">
             <svg className="w-6 h-6 text-green-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.083.534 4.044 1.47 5.754L0 24l6.395-1.44A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-4.953-1.336l-.355-.21-3.797.856.9-3.706-.232-.38A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.083.534 4.044 1.47 5.754L0 24l6.395-1.44A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-4.953-1.336l-.355-.21-3.797.856.9-3.706-.232-.38A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z" />
             </svg>
           </div>
           <div className="flex-1">
