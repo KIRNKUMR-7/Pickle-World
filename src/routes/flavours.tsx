@@ -73,19 +73,18 @@ function Flavours() {
                 </div>
                   <button
                     onClick={() => {
-                      const item = {
+                      useCartStore.getState().addItem({
                         slug: f.slug,
                         name: f.name,
-                        variant: selectedVariant[f.id] || "100g",
-                        price: (selectedVariant[f.id] || "100g") === "100g" ? f.price : f.price300g,
-                        image: f.image
-                      };
-                      useCartStore.getState().addItem(item);
+                        variant: f.weight,
+                        price: f.price,
+                        image: f.image,
+                      });
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-stone-950 px-6 py-3 rounded-full font-bold transition-all shadow-glow"
+                    className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-stone-950 px-6 py-3 rounded-full font-bold transition-all shadow-glow"
                   >
-                  <ShoppingBag className="h-4 w-4" /> Add
-                </button>
+                    <ShoppingBag className="h-4 w-4" /> Add
+                  </button>
               </div>
             </div>
           </motion.article>
