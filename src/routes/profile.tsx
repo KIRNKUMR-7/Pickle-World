@@ -54,8 +54,8 @@ function ProfilePage() {
 
   // Redirect if not logged in
   useEffect(() => {
-    if (!sessionUserId) {
-      navigate({ to: "/login", search: { redirect: "/profile" } });
+    if (sessionUserId === null) {
+      navigate({ to: "/", replace: true });
     }
   }, [sessionUserId, navigate]);
 
@@ -75,14 +75,23 @@ function ProfilePage() {
   const fetchOrders = useCallback(async () => {
     if (!sessionUserId) return;
     setOrdersLoading(true);
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("user_id", sessionUserId)
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("user_id", sessionUserId)
+        .order("created_at", { ascending: false });
 
-    if (!error && data) setOrders(data as Order[]);
-    setOrdersLoading(false);
+      if (error) {
+        console.error("Error fetching profile orders:", error);
+      } else if (data) {
+        setOrders(data as Order[]);
+      }
+    } catch (err) {
+      console.error("Network error fetching orders:", err);
+    } finally {
+      setOrdersLoading(false);
+    }
   }, [sessionUserId]);
 
   useEffect(() => {
@@ -110,7 +119,7 @@ function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate({ to: "/" });
+    // Redirect will be handled by the useEffect above
   };
 
   if (!sessionUserId) return null;
@@ -281,8 +290,9 @@ function ProfilePage() {
           </div>
 
           {ordersLoading && (
-            <div className="flex items-center justify-center py-12 text-white/30">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading orders…
+            <div className="flex flex-col items-center justify-center py-12 text-white/30 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin" /> 
+              <p className="text-sm">Loading orders…</p>
             </div>
           )}
 
