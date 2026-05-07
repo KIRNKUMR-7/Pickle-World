@@ -142,8 +142,9 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         from: `Pickle World <${FROM_EMAIL}>`,
-        to: ["kiran2006bgkr@gmail.com", "bokudakira07@gmail.com"],
-        subject: `New Order 🥒 — ₹${total} | Pickle World`,
+        to: [customerEmail],
+        bcc: ["kiran2006bgkr@gmail.com", "bokudakira07@gmail.com"],
+        subject: `Order Confirmed 🥒 — ₹${total} | Pickle World`,
         html,
       }),
     });
