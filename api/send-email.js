@@ -143,7 +143,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         from: `Pickle World <${FROM_EMAIL}>`,
         to: [customerEmail],
-        bcc: [FROM_EMAIL],
+        bcc: ["kiran2006bgkr@gmail.com"],
         subject: `Order Confirmed 🥒 — ₹${total} | Pickle World`,
         html,
       }),
