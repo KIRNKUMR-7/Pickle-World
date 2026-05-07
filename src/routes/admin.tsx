@@ -32,7 +32,7 @@ type OrderItem = {
   price: number;
 };
 
-type Order = {
+interface Order {
   id: string;
   created_at: string;
   razorpay_payment_id: string;
@@ -42,9 +42,19 @@ type Order = {
   customer_address: string;
   customer_pincode: string;
   total_amount: number;
-  items: OrderItem[];
+  items: any;
   status: string;
-};
+}
+
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  default_address: string;
+  default_pincode: string;
+  created_at: string;
+}
 
 const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || "pickle2024";
 
@@ -54,28 +64,40 @@ function AdminPage() {
   const [pinError, setPinError] = useState(false);
 
   const [orders, setOrders] = useState<Order[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [activeTab, setActiveTab] = useState<'orders' | 'customers'>('orders');
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setFetchError('');
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) {
-        setFetchError(`Supabase error: ${error.message} (code: ${error.code})`);
+      const [ordersRes, profilesRes] = await Promise.all([
+        supabase.from("orders").select("*").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("*").order("created_at", { ascending: false })
+      ]);
+
+      if (ordersRes.error) {
+        setFetchError(`Orders Error: ${ordersRes.error.message}`);
       } else {
-        setOrders((data as Order[]) || []);
+        setOrders((ordersRes.data as Order[]) || []);
+      }
+
+      if (profilesRes.error) {
+        console.error('Profiles fetch error:', profilesRes.error);
+      } else {
+        setProfiles((profilesRes.data as Profile[]) || []);
+      }
+      
+      if (!ordersRes.error) {
         setLastRefresh(new Date());
       }
     } catch (err: any) {
-      setFetchError(`Network error: ${err?.message || 'Unknown error'}. Check Supabase URL and anon key in Vercel env vars.`);
+      setFetchError(`Network error: ${err?.message || 'Unknown error'}. Check Supabase URL and anon key.`);
     } finally {
       setLoading(false);
     }
@@ -110,13 +132,23 @@ function AdminPage() {
   );
   const uniqueCustomers = new Set(orders.map((o) => o.customer_phone)).size;
 
-  const filtered = orders.filter((o) => {
+  const filteredOrders = orders.filter((o) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return (
       o.customer_name?.toLowerCase().includes(s) ||
       o.customer_phone?.includes(s) ||
       o.razorpay_payment_id?.toLowerCase().includes(s)
+    );
+  });
+
+  const filteredProfiles = profiles.filter((p) => {
+    if (!search.trim()) return true;
+    const s = search.toLowerCase();
+    return (
+      p.full_name?.toLowerCase().includes(s) ||
+      p.email?.toLowerCase().includes(s) ||
+      p.phone?.includes(s)
     );
   });
 
@@ -232,6 +264,30 @@ function AdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
+        
+        {/* ── Tabs ── */}
+        <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5 w-max">
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === 'orders' 
+                ? 'bg-amber-500 text-stone-950 shadow-md' 
+                : 'text-white/50 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            Orders
+          </button>
+          <button
+            onClick={() => setActiveTab('customers')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === 'customers' 
+                ? 'bg-amber-500 text-stone-950 shadow-md' 
+                : 'text-white/50 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            Customers ({profiles.length})
+          </button>
+        </div>
 
         {/* ── Stats Row ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -274,13 +330,14 @@ function AdminPage() {
           ))}
         </div>
 
+        {activeTab === 'orders' && (
         {/* ── Orders Table ── */}
         <div className="rounded-2xl bg-white/5 border border-white/5 overflow-hidden">
           {/* Table Header */}
-          <div className="flex items-center justify-between p-5 border-b border-white/5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-white/5 gap-4">
             <h2 className="font-bold text-white flex items-center gap-2">
               <Package className="w-4 h-4 text-amber-400" />
-              Orders ({filtered.length})
+              Orders ({filteredOrders.length})
             </h2>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
@@ -314,7 +371,7 @@ function AdminPage() {
           )}
 
           {/* Empty */}
-          {!loading && !fetchError && filtered.length === 0 && (
+          {!loading && !fetchError && filteredOrders.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-white/30 gap-3">
               <ShoppingBag className="w-10 h-10 opacity-20" />
               <p>{search ? "No orders match your search." : "No orders yet. Place a test order to see it here! 🥒"}</p>
@@ -323,7 +380,7 @@ function AdminPage() {
           )}
 
           {/* Rows */}
-          {!loading && filtered.map((order, idx) => (
+          {!loading && filteredOrders.map((order, idx) => (
             <div key={order.id} className={`border-b border-white/5 last:border-none ${idx % 2 === 0 ? "" : "bg-white/[0.02]"}`}>
               {/* Summary Row */}
               <div
@@ -434,6 +491,60 @@ function AdminPage() {
             </div>
           ))}
         </div>
+        )}
+
+        {/* ── Customers Table ── */}
+        {activeTab === 'customers' && (
+        <div className="rounded-2xl bg-white/5 border border-white/5 overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-white/5 gap-4">
+            <h2 className="font-bold text-white flex items-center gap-2">
+              <Users className="w-4 h-4 text-purple-400" />
+              Signed Up Users ({filteredProfiles.length})
+            </h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+              <input
+                type="text"
+                placeholder="Search name, email, phone…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-white text-sm placeholder-white/20 focus:border-amber-500 outline-none w-full md:w-64 transition-colors"
+              />
+            </div>
+          </div>
+
+          {loading && (
+            <div className="flex items-center justify-center py-16 text-white/30">
+              <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading customers…
+            </div>
+          )}
+
+          {!loading && filteredProfiles.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-white/30 gap-3">
+              <Users className="w-10 h-10 opacity-20" />
+              <p>{search ? "No customers match your search." : "No signed up users yet."}</p>
+            </div>
+          )}
+
+          {!loading && filteredProfiles.map((p, idx) => (
+            <div key={p.id} className={`border-b border-white/5 last:border-none px-5 py-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center ${idx % 2 === 0 ? "" : "bg-white/[0.02]"}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
+                  {p.full_name ? p.full_name.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div>
+                  <p className="font-semibold text-white">{p.full_name || 'No Name Provided'}</p>
+                  <p className="text-white/50 text-xs">{p.email || 'No Email'}</p>
+                </div>
+              </div>
+              <div className="flex flex-col md:items-end gap-1 text-sm text-white/60">
+                <p className="flex items-center gap-2"><Phone className="w-3 h-3" /> {p.phone || 'No Phone'}</p>
+                <p className="text-xs text-white/30">Joined: {new Date(p.created_at).toLocaleDateString('en-IN')}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        )}
       </main>
     </div>
   );
