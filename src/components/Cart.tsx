@@ -1,26 +1,43 @@
-import React, { useState } from 'react';
-import { X, ShoppingBag, Plus, Minus, Trash2, CheckCircle, Package, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ShoppingBag, Plus, Minus, Trash2, CheckCircle, Package, ChevronLeft, LogIn } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
+import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 
 type CheckoutStep = 'cart' | 'details' | 'success';
 
 export const Cart = () => {
   const { items, isCartOpen, toggleCart, updateQuantity, removeItem, getTotalPrice, clearCart } = useCartStore();
+  const { profile, sessionUserId, sessionEmail, signOut } = useAuthStore();
+
   const [step, setStep] = useState<CheckoutStep>('cart');
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', pincode: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastOrder, setLastOrder] = useState<{ paymentId: string; total: number } | null>(null);
 
+  // Pre-fill form from saved profile
+  useEffect(() => {
+    if (profile) {
+      setFormData((prev) => ({
+        name: profile.full_name || prev.name,
+        phone: profile.phone || prev.phone,
+        address: profile.default_address || prev.address,
+        pincode: profile.default_pincode || prev.pincode,
+      }));
+    }
+  }, [profile]);
+
   if (!isCartOpen) return null;
 
   const totalAmount = getTotalPrice();
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const isLoggedIn = !!sessionUserId;
 
+  // ── Checkout with Razorpay ──────────────────────────────────────
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    const cartSnapshot = [...items]; // snapshot before clearing
+    const cartSnapshot = [...items];
 
     try {
       const res = await fetch('/api/create-order', {
@@ -30,7 +47,7 @@ export const Cart = () => {
       });
 
       let order;
-      try { order = await res.json(); } 
+      try { order = await res.json(); }
       catch { throw new Error('Received invalid response from server.'); }
 
       if (!res.ok) throw new Error(order.error || 'Order creation failed. Check Vercel Environment Variables.');
@@ -42,14 +59,16 @@ export const Cart = () => {
         name: 'Pickle World',
         description: `${totalItems} item(s) — ₹${totalAmount}`,
         order_id: order.id,
-        prefill: { name: formData.name, contact: formData.phone },
+        prefill: { name: formData.name, contact: formData.phone, email: sessionEmail || '' },
         handler: async (response: any) => {
-          // Save order to Supabase
+          // 1. Save order to Supabase
           try {
             await supabase.from('orders').insert([{
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
+              user_id: sessionUserId || null,
               customer_name: formData.name,
+              customer_email: sessionEmail || '',
               customer_phone: formData.phone,
               customer_address: formData.address,
               customer_pincode: formData.pincode,
@@ -57,11 +76,38 @@ export const Cart = () => {
               items: cartSnapshot,
               status: 'paid',
             }]);
+
+            // Save address back to profile for next time
+            if (sessionUserId) {
+              await supabase.from('profiles').update({
+                default_address: formData.address,
+                default_pincode: formData.pincode,
+              }).eq('id', sessionUserId);
+            }
           } catch (err) {
             console.error('Failed to save order to Supabase:', err);
           }
 
-          // Send WhatsApp notification to admin
+          // 2. Send order confirmation email via Resend
+          try {
+            await fetch('/api/send-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customerEmail: sessionEmail,
+                customerName: formData.name,
+                items: cartSnapshot,
+                total: totalAmount,
+                paymentId: response.razorpay_payment_id,
+                address: formData.address,
+                pincode: formData.pincode,
+              }),
+            });
+          } catch (err) {
+            console.error('Email notification failed (non-critical):', err);
+          }
+
+          // 3. Send WhatsApp to admin
           try {
             await fetch('/api/send-whatsapp', {
               method: 'POST',
@@ -98,8 +144,17 @@ export const Cart = () => {
 
   const handleClose = () => {
     toggleCart(false);
-    // Reset step after a short delay so animation plays
     setTimeout(() => { setStep('cart'); setLastOrder(null); }, 400);
+  };
+
+  const goToCheckout = () => {
+    if (!isLoggedIn) {
+      // Close cart and go to login, with redirect back
+      toggleCart(false);
+      window.location.href = `/login?redirect=${encodeURIComponent('/flavours')}`;
+      return;
+    }
+    setStep('details');
   };
 
   return (
@@ -124,9 +179,24 @@ export const Cart = () => {
               {step === 'success' && <><CheckCircle className="w-5 h-5 text-green-400" /><span className="text-green-400">Order Placed!</span></>}
             </h2>
           </div>
-          <button onClick={handleClose} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Auth status in header */}
+            {isLoggedIn && profile && step === 'cart' && (
+              <div className="flex items-center gap-2 mr-2">
+                <span className="text-xs text-white/30 truncate max-w-[100px]">{profile.full_name?.split(' ')[0]}</span>
+                <button
+                  onClick={signOut}
+                  className="text-xs text-white/20 hover:text-red-400 transition-colors"
+                  title="Sign out"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+            <button onClick={handleClose} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* ─── Body ─── */}
@@ -144,6 +214,16 @@ export const Cart = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Login nudge if not logged in */}
+                {!isLoggedIn && (
+                  <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                    <LogIn className="w-4 h-4 text-amber-400 shrink-0" />
+                    <p className="text-amber-300 text-sm">
+                      <a href="/login" className="font-semibold underline hover:text-amber-200">Sign in</a> to checkout and track your orders.
+                    </p>
+                  </div>
+                )}
+
                 {items.map((item) => (
                   <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                     <div className="w-18 h-18 rounded-xl overflow-hidden shrink-0 bg-black/50 p-2 flex items-center justify-center" style={{width: 72, height: 72}}>
@@ -177,7 +257,7 @@ export const Cart = () => {
           {/* STEP 2: Delivery Form */}
           {step === 'details' && (
             <form id="checkout-form" onSubmit={handleCheckout} className="space-y-5">
-              <p className="text-white/40 text-sm -mt-2 mb-4">We'll ship your order to this address.</p>
+              <p className="text-white/40 text-sm -mt-2 mb-4">Confirm your delivery details below.</p>
 
               {[
                 { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Enter your full name' },
@@ -235,7 +315,10 @@ export const Cart = () => {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-2">Thank You, {formData.name.split(' ')[0]}! 🎉</h3>
                 <p className="text-white/50 text-sm leading-relaxed">
-                  Your order for <span className="text-amber-400 font-semibold">₹{lastOrder.total}</span> has been placed successfully. We'll ship it to your address shortly!
+                  Your order for <span className="text-amber-400 font-semibold">₹{lastOrder.total}</span> has been placed successfully.
+                  {sessionEmail && (
+                    <> A confirmation email has been sent to <span className="text-amber-400">{sessionEmail}</span>.</>
+                  )}
                 </p>
               </div>
               <div className="w-full p-4 rounded-xl bg-white/5 border border-white/5 text-left space-y-2">
@@ -262,10 +345,14 @@ export const Cart = () => {
               </div>
               {step === 'cart' && (
                 <button
-                  onClick={() => setStep('details')}
-                  className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold px-8 py-3.5 rounded-xl transition-colors flex items-center gap-2"
+                  onClick={goToCheckout}
+                  className={`font-bold px-8 py-3.5 rounded-xl transition-colors flex items-center gap-2 ${
+                    isLoggedIn
+                      ? 'bg-amber-500 hover:bg-amber-400 text-stone-950'
+                      : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30'
+                  }`}
                 >
-                  Checkout →
+                  {isLoggedIn ? 'Checkout →' : <><LogIn className="w-4 h-4" /> Login to Order</>}
                 </button>
               )}
               {step === 'details' && (

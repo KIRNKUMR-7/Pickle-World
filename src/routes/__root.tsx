@@ -1,4 +1,7 @@
 import { Outlet, Link, createRootRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Cart } from '../components/Cart';
+import { useAuthStore } from '../store/authStore';
 
 function NotFoundComponent() {
   return (
@@ -22,16 +25,21 @@ function NotFoundComponent() {
   );
 }
 
-import { Cart } from '../components/Cart';
-
-// ... other imports
-
 export const Route = createRootRoute({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
 
 function RootComponent() {
+  const { initialize } = useAuthStore();
+
+  // Initialize auth once on app load
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    initialize().then((fn) => { cleanup = fn; });
+    return () => { if (cleanup) cleanup(); };
+  }, [initialize]);
+
   return (
     <>
       <Cart />
@@ -50,3 +58,4 @@ function RootComponent() {
     </>
   );
 }
+
