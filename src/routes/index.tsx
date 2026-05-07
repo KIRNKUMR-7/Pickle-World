@@ -217,7 +217,7 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-          {flavours.slice(0, 7).map((f, i) => (
+          {flavours.slice(0, 8).map((f, i) => (
             <motion.div
               key={f.slug}
               initial={{ opacity: 0, y: 30 }}
