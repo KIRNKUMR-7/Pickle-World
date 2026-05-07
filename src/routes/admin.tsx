@@ -478,6 +478,16 @@ function AdminPage() {
                       <p className="text-white/60 text-xs font-mono break-all">{order.razorpay_order_id}</p>
                     </div>
 
+                    <div className="flex items-start gap-2.5">
+                      <Clock className="w-3.5 h-3.5 text-white/30 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-white/40 text-xs">Order Date & Time</p>
+                        <p className="text-white text-sm">
+                          {new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} at {new Date(order.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="pt-2">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.id); }}
