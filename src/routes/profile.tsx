@@ -75,11 +75,14 @@ function ProfilePage() {
     if (!sessionUserId) return;
     setOrdersLoading(true);
     try {
-      const { data, error } = await supabase
+      const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Network timeout") }), 10000));
+      const fetchPromise = supabase
         .from("orders")
         .select("*")
         .eq("user_id", sessionUserId)
         .order("created_at", { ascending: false });
+
+      const { data, error } = (await Promise.race([fetchPromise, timeoutPromise])) as any;
 
       if (error) {
         console.error("Error fetching profile orders:", error);

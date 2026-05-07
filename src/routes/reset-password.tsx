@@ -46,9 +46,12 @@ function ResetPasswordPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.updateUser({
-      password: password,
-    });
+    // Failsafe timeout to prevent infinite spinning
+    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ error: { message: "Network timeout. Please refresh the page and try again." } }), 10000));
+    
+    const updatePromise = supabase.auth.updateUser({ password: password });
+    
+    const { error } = (await Promise.race([updatePromise, timeoutPromise])) as any;
 
     if (error) {
       setError(error.message);
