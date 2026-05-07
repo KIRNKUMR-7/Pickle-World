@@ -12,7 +12,7 @@ export const Route = createFileRoute("/login")({
   }),
 });
 
-type Tab = "signin" | "signup";
+type Tab = "signin" | "signup" | "forgot";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -64,6 +64,28 @@ function LoginPage() {
       setSession(data.user.id, data.user.email ?? null);
       await fetchProfile(data.user.id);
       navigate({ to: redirect as any });
+    }
+    setLoading(false);
+  };
+
+  // ── Reset Password ──────────────────────────────────────────────
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signIn.email) {
+      setError("Please enter your email address above first.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.resetPasswordForEmail(signIn.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess("If that email is registered, you will receive a password reset link shortly.");
     }
     setLoading(false);
   };
@@ -245,10 +267,59 @@ function LoginPage() {
                       Don't have an account?{" "}
                       <button
                         type="button"
-                        onClick={() => setTab("signup")}
                         className="text-amber-500 hover:text-amber-400 underline"
                       >
                         Create one
+                      </button>
+                      {" "} | {" "}
+                      <button
+                        type="button"
+                        onClick={() => setTab("forgot")}
+                        className="text-amber-500 hover:text-amber-400 underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </p>
+                  </motion.form>
+                )}
+
+                {/* ── FORGOT PASSWORD FORM ── */}
+                {tab === "forgot" && (
+                  <motion.form
+                    key="forgot"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    onSubmit={handleResetPassword}
+                    className="space-y-4"
+                  >
+                    <InputField
+                      icon={<Mail className="w-4 h-4" />}
+                      label="Email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={signIn.email}
+                      onChange={(v) => setSignIn({ ...signIn, email: v })}
+                      required
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      {loading ? "Sending link…" : "Send Reset Link"}
+                    </button>
+
+                    <p className="text-center text-white/30 text-xs">
+                      Remembered your password?{" "}
+                      <button
+                        type="button"
+                        onClick={() => setTab("signin")}
+                        className="text-amber-500 hover:text-amber-400 underline"
+                      >
+                        Sign in
                       </button>
                     </p>
                   </motion.form>
