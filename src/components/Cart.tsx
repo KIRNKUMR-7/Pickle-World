@@ -85,53 +85,45 @@ export const Cart = () => {
             console.error('Supabase insert error:', dbError);
             setOrderError(`Order saved in Razorpay but DB error: ${dbError.message}`);
           } else {
-            // Save address back to profile
+            // Save address back to profile (run in background)
             if (sessionUserId) {
-              await supabase.from('profiles').update({
+              supabase.from('profiles').update({
                 default_address: formData.address,
                 default_pincode: formData.pincode,
-              }).eq('id', sessionUserId);
+              }).eq('id', sessionUserId).then();
             }
           }
 
-          // 2. Send order confirmation email via Resend
-          try {
-            await fetch('/api/send-email', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                customerEmail: formData.email,
-                customerName: formData.name,
-                customerPhone: formData.phone,
-                items: cleanItems,
-                total: totalAmount,
-                paymentId: response.razorpay_payment_id,
-                address: formData.address,
-                pincode: formData.pincode,
-              }),
-            });
-          } catch (err) {
-            console.error('Email notification failed (non-critical):', err);
-          }
+          // 2. Send order confirmation email via Resend (run in background)
+          fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customerEmail: formData.email,
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              items: cleanItems,
+              total: totalAmount,
+              paymentId: response.razorpay_payment_id,
+              address: formData.address,
+              pincode: formData.pincode,
+            }),
+          }).catch(err => console.error('Email notification failed:', err));
 
-          // 3. Send WhatsApp to admin
-          try {
-            await fetch('/api/send-whatsapp', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                customerName: formData.name,
-                customerPhone: formData.phone,
-                address: formData.address,
-                pincode: formData.pincode,
-                total: totalAmount,
-                items: cleanItems,
-                paymentId: response.razorpay_payment_id,
-              }),
-            });
-          } catch (err) {
-            console.error('WhatsApp notification failed (non-critical):', err);
-          }
+          // 3. Send WhatsApp to admin (run in background)
+          fetch('/api/send-whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customerName: formData.name,
+              customerPhone: formData.phone,
+              address: formData.address,
+              pincode: formData.pincode,
+              total: totalAmount,
+              items: cleanItems,
+              paymentId: response.razorpay_payment_id,
+            }),
+          }).catch(err => console.error('WhatsApp notification failed:', err));
 
           setLastOrder({ paymentId: response.razorpay_payment_id, total: totalAmount });
           clearCart();
