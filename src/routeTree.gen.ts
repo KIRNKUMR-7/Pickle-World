@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as FlavoursRouteImport } from './routes/flavours'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WhyRoute = WhyRouteImport.update({
   id: '/why',
   path: '/why',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/flavours': typeof FlavoursRoute
   '/why': typeof WhyRoute
+  '/admin': typeof AdminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/flavours': typeof FlavoursRoute
   '/why': typeof WhyRoute
+  '/admin': typeof AdminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/flavours': typeof FlavoursRoute
   '/why': typeof WhyRoute
+  '/admin': typeof AdminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/flavours' | '/why'
+  fullPaths: '/' | '/about' | '/flavours' | '/why' | '/admin'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/flavours' | '/why'
-  id: '__root__' | '/' | '/about' | '/flavours' | '/why'
+  to: '/' | '/about' | '/flavours' | '/why' | '/admin'
+  id: '__root__' | '/' | '/about' | '/flavours' | '/why' | '/admin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +76,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   FlavoursRoute: typeof FlavoursRoute
   WhyRoute: typeof WhyRoute
+  AdminRoute: typeof AdminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   FlavoursRoute: FlavoursRoute,
   WhyRoute: WhyRoute,
+  AdminRoute: AdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

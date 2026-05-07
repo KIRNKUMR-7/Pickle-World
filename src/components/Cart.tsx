@@ -61,6 +61,25 @@ export const Cart = () => {
             console.error('Failed to save order to Supabase:', err);
           }
 
+          // Send WhatsApp notification to admin
+          try {
+            await fetch('/api/send-whatsapp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customerName: formData.name,
+                customerPhone: formData.phone,
+                address: formData.address,
+                pincode: formData.pincode,
+                total: totalAmount,
+                items: cartSnapshot,
+                paymentId: response.razorpay_payment_id,
+              }),
+            });
+          } catch (err) {
+            console.error('WhatsApp notification failed (non-critical):', err);
+          }
+
           setLastOrder({ paymentId: response.razorpay_payment_id, total: totalAmount });
           clearCart();
           setStep('success');
