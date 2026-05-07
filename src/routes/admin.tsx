@@ -110,12 +110,15 @@ function AdminPage() {
   );
   const uniqueCustomers = new Set(orders.map((o) => o.customer_phone)).size;
 
-  const filtered = orders.filter(
-    (o) =>
-      o.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
-      o.customer_phone?.includes(search) ||
-      o.razorpay_payment_id?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = orders.filter((o) => {
+    if (!search.trim()) return true;
+    const s = search.toLowerCase();
+    return (
+      o.customer_name?.toLowerCase().includes(s) ||
+      o.customer_phone?.includes(s) ||
+      o.razorpay_payment_id?.toLowerCase().includes(s)
+    );
+  });
 
   // ── CSV export ───────────────────────────────────────────────
   const exportCSV = () => {
