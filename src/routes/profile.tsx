@@ -71,7 +71,6 @@ function ProfilePage() {
     }
   }, [profile]);
 
-  // Fetch user orders
   const fetchOrders = useCallback(async () => {
     if (!sessionUserId) return;
     setOrdersLoading(true);
@@ -84,19 +83,25 @@ function ProfilePage() {
 
       if (error) {
         console.error("Error fetching profile orders:", error);
+        setOrders([]);
       } else if (data) {
         setOrders(data as Order[]);
+      } else {
+        setOrders([]);
       }
     } catch (err) {
       console.error("Network error fetching orders:", err);
+      setOrders([]);
     } finally {
       setOrdersLoading(false);
     }
   }, [sessionUserId]);
 
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    if (sessionUserId) {
+      fetchOrders();
+    }
+  }, [sessionUserId, fetchOrders]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

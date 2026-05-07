@@ -19,6 +19,7 @@ import {
   MapPin,
   CreditCard,
   Download,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
@@ -123,6 +124,18 @@ function AdminPage() {
     sessionStorage.removeItem("pw_admin");
     setAuthed(false);
     setOrders([]);
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm("Are you sure you want to delete this order?")) return;
+    
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+    if (error) {
+      alert("Failed to delete order: " + error.message);
+    } else {
+      setOrders(orders.filter(o => o.id !== orderId));
+      if (expandedId === orderId) setExpandedId(null);
+    }
   };
 
   // ── Derived stats ────────────────────────────────────────────
@@ -463,6 +476,16 @@ function AdminPage() {
                     <div>
                       <p className="text-white/40 text-xs">Order ID</p>
                       <p className="text-white/60 text-xs font-mono break-all">{order.razorpay_order_id}</p>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.id); }}
+                        className="flex items-center gap-1.5 text-red-400 hover:text-red-300 text-xs px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete Order
+                      </button>
                     </div>
                   </div>
 
