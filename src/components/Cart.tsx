@@ -14,6 +14,7 @@ export const Cart = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', pincode: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastOrder, setLastOrder] = useState<{ paymentId: string; total: number } | null>(null);
+  const [orderError, setOrderError] = useState('');
 
   // Pre-fill form from saved profile
   useEffect(() => {
@@ -61,31 +62,35 @@ export const Cart = () => {
         order_id: order.id,
         prefill: { name: formData.name, contact: formData.phone, email: sessionEmail || '' },
         handler: async (response: any) => {
-          // 1. Save order to Supabase
-          try {
-            await supabase.from('orders').insert([{
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              user_id: sessionUserId || null,
-              customer_name: formData.name,
-              customer_email: sessionEmail || '',
-              customer_phone: formData.phone,
-              customer_address: formData.address,
-              customer_pincode: formData.pincode,
-              total_amount: totalAmount,
-              items: cartSnapshot,
-              status: 'paid',
-            }]);
+          // Clean items — strip image (large blob) before storing/sending
+          const cleanItems = cartSnapshot.map(({ image: _img, id: _id, ...rest }) => rest);
 
-            // Save address back to profile for next time
+          // 1. Save order to Supabase
+          const { error: dbError } = await supabase.from('orders').insert([{
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            user_id: sessionUserId || null,
+            customer_name: formData.name,
+            customer_email: sessionEmail || '',
+            customer_phone: formData.phone,
+            customer_address: formData.address,
+            customer_pincode: formData.pincode,
+            total_amount: totalAmount,
+            items: cleanItems,
+            status: 'paid',
+          }]);
+
+          if (dbError) {
+            console.error('Supabase insert error:', dbError);
+            setOrderError(`Order saved in Razorpay but DB error: ${dbError.message}`);
+          } else {
+            // Save address back to profile
             if (sessionUserId) {
               await supabase.from('profiles').update({
                 default_address: formData.address,
                 default_pincode: formData.pincode,
               }).eq('id', sessionUserId);
             }
-          } catch (err) {
-            console.error('Failed to save order to Supabase:', err);
           }
 
           // 2. Send order confirmation email via Resend
@@ -96,7 +101,8 @@ export const Cart = () => {
               body: JSON.stringify({
                 customerEmail: sessionEmail,
                 customerName: formData.name,
-                items: cartSnapshot,
+                customerPhone: formData.phone,
+                items: cleanItems,
                 total: totalAmount,
                 paymentId: response.razorpay_payment_id,
                 address: formData.address,
@@ -118,7 +124,7 @@ export const Cart = () => {
                 address: formData.address,
                 pincode: formData.pincode,
                 total: totalAmount,
-                items: cartSnapshot,
+                items: cleanItems,
                 paymentId: response.razorpay_payment_id,
               }),
             });
@@ -308,23 +314,42 @@ export const Cart = () => {
 
           {/* STEP 3: Success */}
           {step === 'success' && lastOrder && (
-            <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-6">
+            <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-5">
               <div className="w-24 h-24 rounded-full bg-green-500/15 flex items-center justify-center">
                 <CheckCircle className="w-14 h-14 text-green-400" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-white mb-2">Thank You, {formData.name.split(' ')[0]}! 🎉</h3>
                 <p className="text-white/50 text-sm leading-relaxed">
-                  Your order for <span className="text-amber-400 font-semibold">₹{lastOrder.total}</span> has been placed successfully.
+                  Your order for <span className="text-amber-400 font-semibold">₹{lastOrder.total}</span> has been placed.
                   {sessionEmail && (
-                    <> A confirmation email has been sent to <span className="text-amber-400">{sessionEmail}</span>.</>
+                    <> Confirmation sent to <span className="text-amber-400">{sessionEmail}</span>.</>
                   )}
                 </p>
               </div>
-              <div className="w-full p-4 rounded-xl bg-white/5 border border-white/5 text-left space-y-2">
+
+              {/* DB error warning */}
+              {orderError && (
+                <div className="w-full p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-left">
+                  <p className="text-red-400 text-xs">⚠️ {orderError}</p>
+                  <p className="text-red-300/60 text-xs mt-1">Payment succeeded — contact support with your Payment ID.</p>
+                </div>
+              )}
+
+              <div className="w-full p-4 rounded-xl bg-white/5 border border-white/5 text-left space-y-1">
                 <p className="text-xs text-white/30 uppercase tracking-widest">Payment ID</p>
                 <p className="text-xs text-white/70 font-mono break-all">{lastOrder.paymentId}</p>
               </div>
+
+              {sessionUserId && (
+                <a
+                  href="/profile"
+                  className="w-full py-3 rounded-xl border border-white/10 text-white/60 hover:text-white text-sm font-mono text-center transition-colors block"
+                >
+                  View Order History →
+                </a>
+              )}
+
               <button
                 onClick={handleClose}
                 className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold py-4 rounded-xl transition-colors"

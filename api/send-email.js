@@ -16,10 +16,16 @@ export default async function handler(req, res) {
     try { body = JSON.parse(body); } catch { return res.status(400).json({ error: "Invalid JSON" }); }
   }
 
-  const { customerEmail, customerName, items = [], total, paymentId, address, pincode } = body || {};
+  const { customerEmail, customerName, customerPhone, items = [], total, paymentId, address, pincode } = body || {};
+
+  const safeName = customerName || 'Customer';
+  const safeAddress = address || 'Address not provided';
+  const safePincode = pincode || '';
+  const safePhone = customerPhone || '';
+  const safePaymentId = paymentId || 'N/A';
 
   if (!customerEmail) {
-    return res.status(400).json({ error: "customerEmail is required" });
+    return res.status(400).json({ error: 'customerEmail is required' });
   }
 
   const itemsRows = items
@@ -50,7 +56,7 @@ export default async function handler(req, res) {
           <td style="background:linear-gradient(135deg,#7c2d12,#c2410c);border-radius:16px 16px 0 0;padding:36px 32px;text-align:center;">
             <p style="margin:0 0 8px;font-size:11px;letter-spacing:4px;color:#fed7aa;text-transform:uppercase;font-weight:600;">Pickle World</p>
             <h1 style="margin:0;font-size:32px;font-weight:900;color:#fff;letter-spacing:-1px;">Order Confirmed! 🥒</h1>
-            <p style="margin:12px 0 0;font-size:15px;color:#fcd9b5;opacity:0.85;">Your pickles are on their way, ${customerName?.split(' ')[0] || 'friend'}!</p>
+            <p style="margin:12px 0 0;font-size:15px;color:#fcd9b5;opacity:0.85;">Your pickles are on their way, ${safeName.split(' ')[0]}! 🎉</p>
           </td>
         </tr>
 
@@ -59,12 +65,25 @@ export default async function handler(req, res) {
           <td style="background:#1c1917;padding:32px;">
 
             <!-- Payment Badge -->
-            <div style="background:#052e16;border:1px solid #166534;border-radius:10px;padding:16px 20px;margin-bottom:28px;display:flex;align-items:center;">
-              <span style="font-size:20px;margin-right:12px;">✅</span>
-              <div>
-                <p style="margin:0;font-size:12px;color:#86efac;text-transform:uppercase;letter-spacing:2px;">Payment Successful</p>
-                <p style="margin:4px 0 0;font-size:11px;color:#4ade80;font-family:monospace;word-break:break-all;">${paymentId}</p>
-              </div>
+            <div style="background:#052e16;border:1px solid #166534;border-radius:10px;padding:16px 20px;margin-bottom:28px;">
+              <p style="margin:0;font-size:12px;color:#86efac;text-transform:uppercase;letter-spacing:2px;">✅ Payment Successful</p>
+              <p style="margin:6px 0 0;font-size:11px;color:#4ade80;font-family:monospace;word-break:break-all;">${safePaymentId}</p>
+            </div>
+
+            <!-- Customer Details -->
+            <p style="margin:0 0 12px;font-size:11px;color:#78716c;text-transform:uppercase;letter-spacing:3px;">Customer Details</p>
+            <div style="background:#292524;border:1px solid #2c1a0e;border-radius:10px;padding:16px 20px;margin-bottom:28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:4px 0;font-size:12px;color:#78716c;width:80px;">Name</td>
+                  <td style="padding:4px 0;font-size:14px;color:#fff;font-weight:600;">${safeName}</td>
+                </tr>
+                ${safePhone ? `<tr><td style="padding:4px 0;font-size:12px;color:#78716c;">Phone</td><td style="padding:4px 0;font-size:14px;color:#d6d3d1;">${safePhone}</td></tr>` : ''}
+                <tr>
+                  <td style="padding:4px 0;font-size:12px;color:#78716c;vertical-align:top;">Address</td>
+                  <td style="padding:4px 0;font-size:14px;color:#d6d3d1;line-height:1.5;">${safeAddress}${safePincode ? ` — ${safePincode}` : ''}</td>
+                </tr>
+              </table>
             </div>
 
             <!-- Order Items -->
@@ -89,8 +108,8 @@ export default async function handler(req, res) {
             <!-- Delivery Info -->
             <p style="margin:28px 0 12px;font-size:11px;color:#78716c;text-transform:uppercase;letter-spacing:3px;">Delivery Address</p>
             <div style="background:#292524;border:1px solid #2c1a0e;border-radius:10px;padding:16px 20px;">
-              <p style="margin:0;font-size:14px;color:#d6d3d1;line-height:1.6;">${address}</p>
-              <p style="margin:4px 0 0;font-size:13px;color:#78716c;">PIN: ${pincode}</p>
+              <p style="margin:0;font-size:14px;color:#d6d3d1;line-height:1.6;">${safeAddress}</p>
+              ${safePincode ? `<p style="margin:4px 0 0;font-size:13px;color:#78716c;">PIN: ${safePincode}</p>` : ''}
             </div>
 
             <!-- Note -->
