@@ -143,7 +143,6 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         from: `Pickle World <${FROM_EMAIL}>`,
         to: [customerEmail],
-        bcc: ["kiran2006bgkr@gmail.com", "bokudakira07@gmail.com"],
         subject: `Order Confirmed 🥒 — ₹${total} | Pickle World`,
         html,
       }),
@@ -154,6 +153,21 @@ export default async function handler(req, res) {
       console.error("Resend error:", data);
       return res.status(500).json({ error: data });
     }
+
+    // Send a separate ADMIN ALERT email to prevent Gmail from deduplicating the BCC during testing
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `Pickle World <${FROM_EMAIL}>`,
+        to: ["kiran2006bgkr@gmail.com", "bokudakira07@gmail.com"],
+        subject: `🚨 ADMIN: New Order from ${safeName} (₹${total})`,
+        html: html.replace('Order Confirmed!', 'New Order Received!'),
+      }),
+    });
 
     return res.status(200).json({ success: true, data });
   } catch (err) {
