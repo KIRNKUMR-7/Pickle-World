@@ -1,14 +1,28 @@
 import { Link } from "@tanstack/react-router";
-import { Menu, X, ShoppingBag } from "lucide-react";
+import { Menu, X, ShoppingBag, User, LogIn } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCartStore } from "@/store/cartStore";
+import { useAuthStore } from "@/store/authStore";
 
 export function SiteNav() {
   const [isOpen, setIsOpen] = useState(false);
   const { items, toggleCart } = useCartStore();
+  const { profile, sessionUserId } = useAuthStore();
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const isLoggedIn = !!sessionUserId;
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
+    : "?";
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/flavours", label: "Flavours" },
+    { to: "/about", label: "Story" },
+    { to: "/why", label: "Why Us" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl">
@@ -16,13 +30,10 @@ export function SiteNav() {
         <Link to="/" className="group flex items-center gap-2">
           <img src={logo} alt="Pickle World Logo" className="h-12 scale-[1.3] md:h-12 w-auto object-contain rounded-md origin-left md:scale-[2]" />
         </Link>
+
+        {/* Desktop Nav */}
         <nav className="hidden items-center gap-1 md:flex">
-          {[
-            { to: "/", label: "Home" },
-            { to: "/flavours", label: "Flavours" },
-            { to: "/about", label: "Story" },
-            { to: "/why", label: "Why Us" },
-          ].map((l) => (
+          {navLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -34,8 +45,10 @@ export function SiteNav() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
-          {/* Cart Button */}
+
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          {/* Cart */}
           <button
             id="cart-toggle-btn"
             onClick={() => toggleCart()}
@@ -49,19 +62,45 @@ export function SiteNav() {
               </span>
             )}
           </button>
+
+          {/* Profile / Login */}
+          {isLoggedIn ? (
+            <Link
+              to="/profile"
+              className="hidden md:flex items-center gap-2 rounded-full border border-white/10 hover:border-amber-500/40 px-3 py-1.5 text-sm font-mono text-white/60 hover:text-white transition-all"
+              title="My Account"
+            >
+              <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-stone-950 text-[10px] font-black shrink-0">
+                {initials}
+              </div>
+              <span className="max-w-[80px] truncate">{profile?.full_name?.split(" ")[0] || "Account"}</span>
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden md:flex items-center gap-1.5 rounded-full border border-white/10 hover:border-amber-500/40 px-3 py-1.5 text-sm font-mono text-white/50 hover:text-amber-400 transition-all"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Sign In
+            </Link>
+          )}
+
+          {/* Order CTA */}
           <a
             href="#order"
             className="rounded-full bg-cream px-4 py-1.5 md:px-5 md:py-2 font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105"
           >
             Order ↗
           </a>
+
+          {/* Mobile hamburger */}
           <button className="md:hidden p-1" onClick={() => setIsOpen(true)}>
             <Menu className="h-6 w-6 text-cream" />
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -78,14 +117,9 @@ export function SiteNav() {
                 <X className="h-8 w-8 text-cream" />
               </button>
             </div>
-            
-            <nav className="flex flex-col gap-6 text-center mt-8">
-              {[
-                { to: "/", label: "Home" },
-                { to: "/flavours", label: "Flavours" },
-                { to: "/about", label: "Story" },
-                { to: "/why", label: "Why Us" },
-              ].map((l) => (
+
+            <nav className="flex flex-col gap-6 text-center mt-4">
+              {navLinks.map((l) => (
                 <Link
                   key={l.to}
                   to={l.to}
@@ -97,8 +131,27 @@ export function SiteNav() {
                   {l.label}
                 </Link>
               ))}
+
+              {/* Auth link in mobile menu */}
+              {isLoggedIn ? (
+                <Link
+                  to="/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="text-2xl font-display font-black uppercase tracking-widest text-amber-500"
+                >
+                  My Account
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="text-2xl font-display font-black uppercase tracking-widest text-amber-500/70 hover:text-amber-500"
+                >
+                  Sign In
+                </Link>
+              )}
             </nav>
-            
+
             <div className="mt-auto mb-10 flex justify-center">
               <a
                 href="#order"

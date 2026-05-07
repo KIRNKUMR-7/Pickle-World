@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as FlavoursRouteImport } from './routes/flavours'
 import { Route as AboutRouteImport } from './routes/about'
@@ -24,6 +25,11 @@ const AdminRoute = AdminRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WhyRoute = WhyRouteImport.update({
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/why': typeof WhyRoute
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/why': typeof WhyRoute
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,13 +79,14 @@ export interface FileRoutesById {
   '/why': typeof WhyRoute
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/flavours' | '/why' | '/admin' | '/login'
+  fullPaths: '/' | '/about' | '/flavours' | '/why' | '/admin' | '/login' | '/profile'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/flavours' | '/why' | '/admin' | '/login'
-  id: '__root__' | '/' | '/about' | '/flavours' | '/why' | '/admin' | '/login'
+  to: '/' | '/about' | '/flavours' | '/why' | '/admin' | '/login' | '/profile'
+  id: '__root__' | '/' | '/about' | '/flavours' | '/why' | '/admin' | '/login' | '/profile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -87,6 +96,7 @@ export interface RootRouteChildren {
   WhyRoute: typeof WhyRoute
   AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -133,6 +143,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -143,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   WhyRoute: WhyRoute,
   AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
