@@ -11,7 +11,7 @@ export const Cart = () => {
   const { profile, sessionUserId, sessionEmail, signOut } = useAuthStore();
 
   const [step, setStep] = useState<CheckoutStep>('cart');
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '', pincode: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '', pincode: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastOrder, setLastOrder] = useState<{ paymentId: string; total: number } | null>(null);
   const [orderError, setOrderError] = useState('');
@@ -21,6 +21,7 @@ export const Cart = () => {
     if (profile) {
       setFormData((prev) => ({
         name: profile.full_name || prev.name,
+        email: sessionEmail || prev.email,
         phone: profile.phone || prev.phone,
         address: profile.default_address || prev.address,
         pincode: profile.default_pincode || prev.pincode,
@@ -60,7 +61,7 @@ export const Cart = () => {
         name: 'Pickle World',
         description: `${totalItems} item(s) — ₹${totalAmount}`,
         order_id: order.id,
-        prefill: { name: formData.name, contact: formData.phone, email: sessionEmail || '' },
+        prefill: { name: formData.name, contact: formData.phone, email: formData.email },
         handler: async (response: any) => {
           // Clean items — strip image (large blob) before storing/sending
           const cleanItems = cartSnapshot.map(({ image: _img, id: _id, ...rest }) => rest);
@@ -71,7 +72,7 @@ export const Cart = () => {
             razorpay_order_id: response.razorpay_order_id,
             user_id: sessionUserId || null,
             customer_name: formData.name,
-            customer_email: sessionEmail || '',
+            customer_email: formData.email,
             customer_phone: formData.phone,
             customer_address: formData.address,
             customer_pincode: formData.pincode,
@@ -99,7 +100,7 @@ export const Cart = () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                customerEmail: sessionEmail,
+                customerEmail: formData.email,
                 customerName: formData.name,
                 customerPhone: formData.phone,
                 items: cleanItems,
@@ -267,6 +268,7 @@ export const Cart = () => {
 
               {[
                 { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Enter your full name' },
+                { label: 'Email Address', key: 'email', type: 'email', placeholder: 'For order receipts' },
                 { label: 'Phone Number', key: 'phone', type: 'tel', placeholder: '10-digit mobile number' },
                 { label: 'PIN Code', key: 'pincode', type: 'text', placeholder: 'e.g. 600001' },
               ].map(({ label, key, type, placeholder }) => (
