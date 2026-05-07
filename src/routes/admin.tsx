@@ -331,7 +331,6 @@ function AdminPage() {
         </div>
 
         {activeTab === 'orders' && (
-        {/* ── Orders Table ── */}
         <div className="rounded-2xl bg-white/5 border border-white/5 overflow-hidden">
           {/* Table Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-white/5 gap-4">
