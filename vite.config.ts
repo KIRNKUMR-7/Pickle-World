@@ -34,6 +34,40 @@ function vercelApiMock() {
               res.end(JSON.stringify({ error: err.message }));
             }
           });
+        } else if (req.url === '/api/admin-data' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk: any) => { body += chunk.toString(); });
+          req.on('end', async () => {
+            try {
+              const env = loadEnv(server.config.mode, process.cwd(), '');
+              const { pin } = JSON.parse(body);
+              const ADMIN_PIN = env.VITE_ADMIN_PIN || "pickle2024";
+              
+              if (pin !== ADMIN_PIN) {
+                res.statusCode = 401;
+                res.end(JSON.stringify({ error: "Unauthorized" }));
+                return;
+              }
+
+              const { createClient } = await import("@supabase/supabase-js");
+              const supabase = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+              
+              const [ordersRes, profilesRes] = await Promise.all([
+                supabase.from("orders").select("*").order("created_at", { ascending: false }),
+                supabase.from("profiles").select("*").order("created_at", { ascending: false })
+              ]);
+
+              if (ordersRes.error) throw new Error(ordersRes.error.message);
+              if (profilesRes.error) throw new Error(profilesRes.error.message);
+
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ orders: ordersRes.data || [], profiles: profilesRes.data || [] }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
         } else {
           next();
         }

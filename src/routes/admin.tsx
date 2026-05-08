@@ -77,28 +77,27 @@ function AdminPage() {
     setLoading(true);
     setFetchError('');
     try {
-      const [ordersRes, profilesRes] = await Promise.all([
-        supabase.from("orders").select("*").order("created_at", { ascending: false }),
-        supabase.from("profiles").select("*").order("created_at", { ascending: false })
-      ]);
+      const res = await fetch("/api/admin-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ pin: ADMIN_PIN })
+      });
 
-      if (ordersRes.error) {
-        setFetchError(`Orders Error: ${ordersRes.error.message}`);
-      } else {
-        setOrders((ordersRes.data as Order[]) || []);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
       }
 
-      if (profilesRes.error) {
-        console.error('Profiles fetch error:', profilesRes.error);
-      } else {
-        setProfiles((profilesRes.data as Profile[]) || []);
-      }
+      const data = await res.json();
       
-      if (!ordersRes.error) {
-        setLastRefresh(new Date());
-      }
+      setOrders(data.orders || []);
+      setProfiles(data.profiles || []);
+      setLastRefresh(new Date());
+      
     } catch (err: any) {
-      setFetchError(`Network error: ${err?.message || 'Unknown error'}. Check Supabase URL and anon key.`);
+      setFetchError(`Fetch error: ${err?.message || 'Unknown error'}.`);
     } finally {
       setLoading(false);
     }
