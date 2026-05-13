@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
-  "buildVersion": "2026-05-13-v2",
+  "buildVersion": "2026-05-13-v3",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
