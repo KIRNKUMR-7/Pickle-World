@@ -43,9 +43,7 @@ function Flavours() {
                 height={800}
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute left-4 top-4 rounded-full bg-ink/80 px-4 py-1.5 font-mono text-xs uppercase tracking-widest text-cream backdrop-blur">
-                №&nbsp;0{i + 1}
-              </div>
+
             </div>
             <div className="flex flex-col justify-between p-8 md:col-span-7 md:p-12">
               <div>
