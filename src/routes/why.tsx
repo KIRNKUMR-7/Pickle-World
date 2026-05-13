@@ -9,10 +9,10 @@ export const Route = createFileRoute("/why")({
 });
 
 const pillars = [
-  { icon: Leaf, title: "Nothing fake", body: "Cold-pressed sesame and mustard oils. Hand-picked spices. No colours, no preservatives, no shortcuts.", num: "01" },
-  { icon: Flame, title: "Slow-cured", body: "Every batch matures for ten days minimum. The chili doesn't shout — it sings.", num: "02" },
-  { icon: Package, title: "Honest packaging", body: "Glass, not plastic. A jar that earns a second life on your shelf, not a landfill.", num: "03" },
-  { icon: HeartHandshake, title: "Fair to the source", body: "Coastal fishermen, hill goat-herders, organic farmers. We pay above market — always.", num: "04" },
+  { icon: Leaf, title: "Nothing fake", body: "Cold-pressed sesame and mustard oils. Hand-picked spices. No colours, no preservatives, no shortcuts." },
+  { icon: Flame, title: "Slow-cured", body: "Every batch matures for ten days minimum. The chili doesn't shout — it sings." },
+  { icon: Package, title: "Honest packaging", body: "Glass, not plastic. A jar that earns a second life on your shelf, not a landfill." },
+  { icon: HeartHandshake, title: "Fair to the source", body: "Coastal fishermen, hill goat-herders, organic farmers. We pay above market — always." },
 ];
 
 function Why() {
@@ -38,9 +38,7 @@ function Why() {
               transition={{ delay: i * 0.07 }}
               className="group relative overflow-hidden rounded-3xl border border-border bg-card p-10 transition-colors hover:border-chili"
             >
-              <span className="absolute right-6 top-6 font-display text-7xl font-black text-muted opacity-30 transition-colors group-hover:text-chili">
-                {p.num}
-              </span>
+
               <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-full bg-chili text-cream">
                 <Icon className="h-6 w-6" />
               </div>

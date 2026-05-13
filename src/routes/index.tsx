@@ -205,7 +205,7 @@ function Home() {
       <section id="order" className="relative mx-auto max-w-7xl px-6 py-24">
         <div className="mb-12 flex items-end justify-between">
           <div>
-            <p className="mb-3 font-mono text-xs uppercase tracking-widest text-turmeric">01 — The Lineup</p>
+            <p className="mb-3 font-mono text-xs uppercase tracking-widest text-turmeric">The Lineup</p>
             <h2 className="font-display text-5xl font-black leading-none md:text-7xl">
               <span className="text-gradient-fire">Seven flavours.</span><br />
               <span className="text-stroke-chili">Zero filler.</span>
@@ -285,7 +285,7 @@ function Home() {
               viewport={{ once: true, margin: "-100px" }}
               className="flex flex-col"
             >
-              <p className="mb-4 font-mono text-xs uppercase tracking-widest text-turmeric">02 — Our Story</p>
+              <p className="mb-4 font-mono text-xs uppercase tracking-widest text-turmeric">Our Story</p>
               <h2 className="font-display text-4xl md:text-6xl font-black leading-tight mb-6">
                 Rooted in <br className="hidden lg:block" />
                 <span className="italic text-chili">tradition.</span>
@@ -328,7 +328,7 @@ function Home() {
       {/* MANIFESTO */}
       <section className="relative overflow-hidden border-y border-border bg-chili">
         <div className="mx-auto max-w-6xl px-6 py-24 text-cream">
-          <p className="mb-6 font-mono text-xs uppercase tracking-widest text-turmeric">03 — The Manifesto</p>
+          <p className="mb-6 font-mono text-xs uppercase tracking-widest text-turmeric">The Manifesto</p>
           <p className="font-display text-4xl font-black leading-tight md:text-6xl">
             We refuse to be polite.<br />
             <span className="italic">Pickles should</span><br />
