@@ -78,6 +78,10 @@ export default async function handler(req, res) {
                   <td style="padding:4px 0;font-size:12px;color:#78716c;width:80px;">Name</td>
                   <td style="padding:4px 0;font-size:14px;color:#fff;font-weight:600;">${safeName}</td>
                 </tr>
+                <tr>
+                  <td style="padding:4px 0;font-size:12px;color:#78716c;">Email</td>
+                  <td style="padding:4px 0;font-size:14px;color:#d6d3d1;">${customerEmail}</td>
+                </tr>
                 ${safePhone ? `<tr><td style="padding:4px 0;font-size:12px;color:#78716c;">Phone</td><td style="padding:4px 0;font-size:14px;color:#d6d3d1;">${safePhone}</td></tr>` : ''}
                 <tr>
                   <td style="padding:4px 0;font-size:12px;color:#78716c;vertical-align:top;">Address</td>
