@@ -154,7 +154,24 @@ function AdminPage() {
     );
   });
 
-  const filteredProfiles = profiles.filter((p) => {
+  // Deduplicate profiles
+  const uniqueProfilesMap = new Map<string, Profile>();
+  profiles.forEach((p) => {
+    // Prefer phone as key, fallback to email. If neither, use ID.
+    const key = p.phone || p.email || p.id;
+    const existing = uniqueProfilesMap.get(key);
+    if (!existing) {
+      uniqueProfilesMap.set(key, p);
+    } else {
+      // If the current profile has a name and the existing one doesn't, prefer the current one
+      if (p.full_name && !existing.full_name) {
+        uniqueProfilesMap.set(key, p);
+      }
+    }
+  });
+  const dedupedProfiles = Array.from(uniqueProfilesMap.values());
+
+  const filteredProfiles = dedupedProfiles.filter((p) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return (
