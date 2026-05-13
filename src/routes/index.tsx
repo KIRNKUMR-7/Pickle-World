@@ -285,7 +285,6 @@ function Home() {
               viewport={{ once: true, margin: "-100px" }}
               className="flex flex-col"
             >
-              <p className="mb-4 font-mono text-xs uppercase tracking-widest text-turmeric">Our Story</p>
               <h2 className="font-display text-4xl md:text-6xl font-black leading-tight mb-6">
                 Rooted in <br className="hidden lg:block" />
                 <span className="italic text-chili">tradition.</span>
