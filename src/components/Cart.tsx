@@ -72,7 +72,6 @@ export const Cart = () => {
             razorpay_order_id: response.razorpay_order_id,
             user_id: sessionUserId || null,
             customer_name: formData.name,
-            customer_email: formData.email,
             customer_phone: formData.phone,
             customer_address: formData.address,
             customer_pincode: formData.pincode,
