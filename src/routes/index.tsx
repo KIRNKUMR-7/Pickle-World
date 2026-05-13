@@ -206,7 +206,7 @@ function Home() {
         <div className="mb-12 flex items-end justify-between">
           <div>
             <p className="mb-3 font-mono text-xs uppercase tracking-widest text-turmeric">The Lineup</p>
-            <h2 className="font-display text-5xl font-black leading-none md:text-7xl">
+            <h2 className="font-display text-5xl font-black leading-none md:text-7xl" aria-label="Seven flavours. Zero filler.">
               <span className="text-gradient-fire">Seven flavours.</span><br />
               <span className="text-stroke-chili">Zero filler.</span>
             </h2>
