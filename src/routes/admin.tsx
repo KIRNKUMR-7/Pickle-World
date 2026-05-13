@@ -323,15 +323,6 @@ function AdminPage() {
           ))}
         </div>
 
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        )}
-
         {/* ── Customers Table ── */}
         {activeTab === 'customers' && (
         <div className="rounded-2xl bg-white/5 border border-white/5 overflow-hidden">
