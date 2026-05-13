@@ -117,9 +117,6 @@ function Home() {
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </motion.div>
-              <Link to="/about" className="font-mono text-sm uppercase tracking-widest text-muted-foreground underline-offset-4 hover:text-cream hover:underline">
-                Our story →
-              </Link>
             </motion.div>
           </div>
 
@@ -168,9 +165,6 @@ function Home() {
             >
               Taste the Seven
               <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link to="/about" className="font-mono text-xs uppercase tracking-widest text-muted-foreground underline-offset-4 hover:text-cream hover:underline">
-              Our story →
             </Link>
             <div className="w-full flex justify-start pl-2 mt-8">
               <div className="rotate-[-6deg] rounded-full bg-turmeric px-6 py-2.5 font-display text-xl font-black text-ink shadow-sticker">
