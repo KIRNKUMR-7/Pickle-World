@@ -6,12 +6,62 @@ import { supabase } from '../lib/supabase';
 
 type CheckoutStep = 'cart' | 'details' | 'success';
 
+// ── Delivery Zone Config ───────────────────────────────────────────
+const TAMIL_NADU_CHARGE = 59;
+const SOUTH_INDIA_CHARGE = 99;
+
+const SOUTH_INDIA_STATES = [
+  'Tamil Nadu',
+  'Kerala',
+  'Karnataka',
+  'Andhra Pradesh',
+  'Telangana',
+  'Puducherry',
+];
+
+// ── Razorpay Fee Config ─────────────────────────────────────────────
+// Razorpay charges 2% platform fee on each successful transaction.
+// 18% GST is applied on top of that 2% fee.
+// Combined effective rate = 2% + (18% of 2%) = 2.36%
+const RAZORPAY_PLATFORM_FEE_RATE = 0.02;   // 2%
+const GST_ON_FEE_RATE             = 0.18;   // 18% GST on the platform fee
+
+interface FeeBreakdown {
+  platformFee: number;   // 2% of (subtotal + delivery)
+  gstOnFee: number;      // 18% of platformFee
+  totalFee: number;      // platformFee + gstOnFee
+  grandTotal: number;    // subtotal + delivery + totalFee
+}
+
+function calcGatewayFees(baseAmount: number): FeeBreakdown {
+  const platformFee = Math.round(baseAmount * RAZORPAY_PLATFORM_FEE_RATE);
+  const gstOnFee    = Math.round(platformFee * GST_ON_FEE_RATE);
+  const totalFee    = platformFee + gstOnFee;
+  const grandTotal  = baseAmount + totalFee;
+  return { platformFee, gstOnFee, totalFee, grandTotal };
+}
+
+// Parse weight in grams from a variant string like "100g", "300g", "1kg"
+function parseWeightGrams(variant: string): number {
+  const lower = variant.toLowerCase().trim();
+  const kgMatch = lower.match(/^([\d.]+)\s*kg$/);
+  if (kgMatch) return parseFloat(kgMatch[1]) * 1000;
+  const gMatch = lower.match(/^([\d.]+)\s*g$/);
+  if (gMatch) return parseFloat(gMatch[1]);
+  return 0;
+}
+
+function calcDeliveryCharge(state: string, totalGrams: number): number {
+  const base = state === 'Tamil Nadu' ? TAMIL_NADU_CHARGE : SOUTH_INDIA_CHARGE;
+  return totalGrams > 1000 ? base * 2 : base;
+}
+
 export const Cart = () => {
   const { items, isCartOpen, toggleCart, updateQuantity, removeItem, getTotalPrice, clearCart } = useCartStore();
   const { profile, sessionUserId, sessionEmail, signOut } = useAuthStore();
 
   const [step, setStep] = useState<CheckoutStep>('cart');
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '', pincode: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '', pincode: '', state: 'Tamil Nadu' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastOrder, setLastOrder] = useState<{ paymentId: string; total: number } | null>(null);
   const [orderError, setOrderError] = useState('');
@@ -25,27 +75,41 @@ export const Cart = () => {
         phone: profile.phone || prev.phone,
         address: profile.default_address || prev.address,
         pincode: profile.default_pincode || prev.pincode,
+        state: prev.state,
       }));
     }
   }, [profile]);
 
   if (!isCartOpen) return null;
 
-  const totalAmount = getTotalPrice();
+  const productTotal = getTotalPrice();
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const isLoggedIn = !!sessionUserId;
+
+  // ── Weight calculation ─────────────────────────────────────────
+  const totalWeightGrams = items.reduce((sum, item) => {
+    return sum + parseWeightGrams(item.variant) * item.quantity;
+  }, 0);
+
+  // ── Delivery charge ────────────────────────────────────────────
+  const deliveryCharge = calcDeliveryCharge(formData.state, totalWeightGrams);
+
+  // ── Razorpay gateway fees (computed on subtotal + delivery) ────
+  const fees = calcGatewayFees(productTotal + deliveryCharge);
+  const { platformFee, gstOnFee, totalFee, grandTotal } = fees;
 
   // ── Checkout with Razorpay ──────────────────────────────────────
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
     const cartSnapshot = [...items];
+    const finalTotal = grandTotal; // includes delivery + Razorpay gateway fees
 
     try {
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: totalAmount, receipt: `rcpt_${Date.now()}` }),
+        body: JSON.stringify({ amount: grandTotal, receipt: `rcpt_${Date.now()}` }),
       });
 
       let order;
@@ -59,7 +123,7 @@ export const Cart = () => {
         amount: order.amount,
         currency: order.currency,
         name: 'Pickle World',
-        description: `${totalItems} item(s) — ₹${totalAmount}`,
+        description: `${totalItems} item(s) — ₹${finalTotal}`,
         order_id: order.id,
         prefill: { name: formData.name, contact: formData.phone, email: formData.email },
         handler: async (response: any) => {
@@ -75,7 +139,7 @@ export const Cart = () => {
             customer_phone: formData.phone,
             customer_address: formData.address,
             customer_pincode: formData.pincode,
-            total_amount: totalAmount,
+            total_amount: finalTotal,
             items: cleanItems,
             status: 'paid',
           }]);
@@ -102,7 +166,9 @@ export const Cart = () => {
               customerName: formData.name,
               customerPhone: formData.phone,
               items: cleanItems,
-              total: totalAmount,
+              total: finalTotal,
+              deliveryCharge,
+              state: formData.state,
               paymentId: response.razorpay_payment_id,
               address: formData.address,
               pincode: formData.pincode,
@@ -118,13 +184,15 @@ export const Cart = () => {
               customerPhone: formData.phone,
               address: formData.address,
               pincode: formData.pincode,
-              total: totalAmount,
+              state: formData.state,
+              total: finalTotal,
+              deliveryCharge,
               items: cleanItems,
               paymentId: response.razorpay_payment_id,
             }),
           }).catch(err => console.error('WhatsApp notification failed:', err));
 
-          setLastOrder({ paymentId: response.razorpay_payment_id, total: totalAmount });
+          setLastOrder({ paymentId: response.razorpay_payment_id, total: finalTotal });
           clearCart();
           setStep('success');
         },
@@ -147,7 +215,6 @@ export const Cart = () => {
 
   const goToCheckout = () => {
     if (!isLoggedIn) {
-      // Close cart and go to login, with redirect back
       toggleCart(false);
       window.location.href = `/login?redirect=${encodeURIComponent('/flavours')}`;
       return;
@@ -178,7 +245,6 @@ export const Cart = () => {
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            {/* Auth status in header */}
             {isLoggedIn && profile && step === 'cart' && (
               <div className="flex items-center gap-2 mr-2">
                 <span className="text-xs text-white/30 truncate max-w-[100px]">{profile.full_name?.split(' ')[0]}</span>
@@ -276,6 +342,21 @@ export const Cart = () => {
                 </div>
               ))}
 
+              {/* State Selector */}
+              <div>
+                <label className="block text-sm text-white/60 mb-1.5">State</label>
+                <select
+                  required
+                  value={formData.state}
+                  onChange={e => setFormData({ ...formData, state: e.target.value })}
+                  className="w-full bg-stone-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors text-sm appearance-none cursor-pointer"
+                >
+                  {SOUTH_INDIA_STATES.map(s => (
+                    <option key={s} value={s} className="bg-stone-900 text-white">{s}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm text-white/60 mb-1.5">Delivery Address</label>
                 <textarea
@@ -291,16 +372,57 @@ export const Cart = () => {
               {/* Order Summary */}
               <div className="rounded-xl bg-white/5 border border-white/5 p-4 space-y-2">
                 <p className="text-white/50 text-xs uppercase tracking-widest mb-3">Order Summary</p>
+
+                {/* Product Lines */}
                 {items.map(i => (
                   <div key={i.id} className="flex justify-between text-sm">
                     <span className="text-white/60">{i.name} ({i.variant}) × {i.quantity}</span>
                     <span className="text-white">₹{i.price * i.quantity}</span>
                   </div>
                 ))}
-                <div className="border-t border-white/10 pt-2 flex justify-between font-bold">
-                  <span className="text-white">Total</span>
-                  <span className="text-amber-400">₹{totalAmount}</span>
+
+                {/* Subtotal */}
+                <div className="border-t border-white/10 pt-2 flex justify-between text-sm">
+                  <span className="text-white/60">Subtotal</span>
+                  <span className="text-white">₹{productTotal}</span>
                 </div>
+
+                {/* Delivery Charge */}
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/60 flex flex-col">
+                    <span>Delivery ({formData.state})</span>
+                    {totalWeightGrams > 1000 && (
+                      <span className="text-amber-400/70 text-xs">
+                        {(totalWeightGrams / 1000).toFixed(2)}kg → double charge
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-amber-400 font-semibold">₹{deliveryCharge}</span>
+                </div>
+
+                {/* Gateway Fee Breakdown */}
+                <div className="border-t border-white/10 pt-2 space-y-1.5">
+                  <p className="text-white/30 text-xs uppercase tracking-widest mb-1">Payment Gateway Charges</p>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-white/50">Tax & Charges (2%)</span>
+                    <span className="text-white/70">₹{platformFee}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-white/50">GST on Tax & Charges (18%)</span>
+                    <span className="text-white/70">₹{gstOnFee}</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-white/40">Total Gateway Charges</span>
+                    <span className="text-white/60">₹{totalFee}</span>
+                  </div>
+                </div>
+
+                {/* Grand Total */}
+                <div className="border-t border-amber-500/20 pt-2 flex justify-between font-bold">
+                  <span className="text-white">Grand Total</span>
+                  <span className="text-amber-400">₹{grandTotal}</span>
+                </div>
+                <p className="text-white/20 text-xs text-right -mt-1">Incl. all taxes & gateway charges</p>
               </div>
             </form>
           )}
@@ -359,7 +481,14 @@ export const Cart = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-white/40 text-xs">{totalItems} item{totalItems > 1 ? 's' : ''}</p>
-                <p className="text-white font-bold text-xl">₹{totalAmount}</p>
+                {step === 'details' ? (
+                  <>
+                    <p className="text-white/30 text-xs">Delivery ₹{deliveryCharge} + Gateway ₹{totalFee}</p>
+                    <p className="text-white font-bold text-xl">₹{grandTotal}</p>
+                  </>
+                ) : (
+                  <p className="text-white font-bold text-xl">₹{productTotal}</p>
+                )}
               </div>
               {step === 'cart' && (
                 <button
@@ -380,7 +509,7 @@ export const Cart = () => {
                   disabled={isProcessing}
                   className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-stone-950 font-bold px-6 py-3.5 rounded-xl transition-colors"
                 >
-                  {isProcessing ? 'Processing...' : `Pay ₹${totalAmount}`}
+                  {isProcessing ? 'Processing...' : `Pay ₹${grandTotal}`}
                 </button>
               )}
             </div>
